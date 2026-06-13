@@ -83,7 +83,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .scn{flex:1;padding:5px 9px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:12px;font-weight:500;outline:none;transition:border-color var(--tr)}
 .scn:focus{border-color:var(--ac)}
 .scp{padding:5px 7px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;transition:border-color var(--tr)}
-.scp:focus{border-color:var(--ac)}
+.scp:focus{border-color:var(--ac)} #globalPlatform:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,140,255,.1)}
 .brm{width:26px;height:26px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all var(--tr);flex-shrink:0}
 .brm:hover{background:var(--crbg);color:var(--cr);border-color:rgba(248,81,73,.2)}
 .scb{padding:13px;display:flex;flex-direction:column;gap:11px}
@@ -154,9 +154,11 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 /* SCORE STRIP */
 .ss{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin-bottom:18px}
 .st{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);padding:13px 10px;text-align:center}
+.st{cursor:default}.st.clickable{cursor:pointer;transition:all var(--tr)}.st.clickable:hover{border-color:var(--b2);transform:translateY(-1px)}.st.clickable.act-crit{border-color:var(--cr);background:rgba(248,81,73,0.08);box-shadow:0 0 0 2px rgba(248,81,73,0.15)}.st.clickable.act-high{border-color:var(--hi);background:rgba(240,136,62,0.08);box-shadow:0 0 0 2px rgba(240,136,62,0.15)}.st.clickable.act-med{border-color:var(--me);background:rgba(210,153,34,0.08);box-shadow:0 0 0 2px rgba(210,153,34,0.15)}.st.clickable.act-low{border-color:var(--lo);background:rgba(63,185,80,0.08);box-shadow:0 0 0 2px rgba(63,185,80,0.15)}
 .st .v{font-size:26px;font-weight:800;line-height:1;margin-bottom:3px}
 .st .l{font-size:10px;color:var(--t2)}
 .st .sb{font-size:9px;color:var(--t3);margin-top:1px}
+.score-hint-wrap{position:relative;display:inline-block}.score-hint-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);color:var(--t2);font-size:10px;cursor:help;margin-left:6px;flex-shrink:0;font-style:normal;transition:all var(--tr)}.score-hint-icon:hover{background:var(--acbg);border-color:var(--ac);color:var(--ac)}.score-hint-pop{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:280px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--rl);padding:14px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)}.score-hint-icon:hover .score-hint-pop,.score-hint-pop:hover{display:block}.score-hint-pop h4{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:8px}.score-hint-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;color:var(--t2)}.score-hint-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}.score-hint-arrow{position:absolute;top:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;background:var(--s1);border-left:1px solid var(--b2);border-top:1px solid var(--b2)}
 
 /* TABS */
 .tbs{display:flex;gap:1px;border-bottom:1px solid var(--b);margin-bottom:18px;overflow-x:auto}
@@ -240,6 +242,8 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 
 /* SKIPPED */
 .sk{display:flex;align-items:center;gap:9px;padding:13px 14px;background:var(--s2);border:1px dashed var(--b2);border-radius:var(--r);color:var(--t3);font-size:11px;margin-top:7px}
+.sol-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}.sol-card-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--b)}.sol-pri{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}.sol-title{font-size:12px;font-weight:600;flex:1;color:var(--tx)}.sol-effort{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:var(--s3);color:var(--t2)}.sol-body{padding:10px 14px}.sol-pts{display:flex;flex-direction:column;gap:5px}.sol-pt{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--t2);line-height:1.5}.sol-pt::before{content:'→';color:var(--ac);flex-shrink:0}.sol-impact{margin-top:8px;padding:6px 10px;background:var(--s2);border-radius:var(--r);font-size:11px;color:var(--t3);display:flex;align-items:center;gap:6px}.sol-impact svg{flex-shrink:0;color:var(--me)}
+.sol-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}.sol-legend{display:flex;align-items:center;gap:14px;padding:8px 12px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}.sol-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
 
 /* COMPARISON */
 .ct2{width:100%;border-collapse:collapse;font-size:11px}
@@ -316,6 +320,22 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
         <div class="ilbl">What does this system do? <span class="op">(industry, purpose, scale, compliance)</span></div>
         <textarea id="biz" rows="4" placeholder="e.g. Multi-tenant SaaS platform for e-commerce. Manages product catalogs, orders, payments, and customer accounts. ~500K orders/day across 200 tenants. GDPR-regulated, PCI-DSS required."></textarea>
         <div class="db"><div class="dd" id="dDot"></div><span id="dTxt" style="color:var(--t3)">Start typing to detect business domain automatically...</span></div>
+        <div style="margin-top:12px">
+          <div class="ilbl" style="margin-bottom:6px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Primary Database Platform
+          </div>
+          <select id="globalPlatform" onchange="updateGlobalPlatform(this.value)"
+            style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);color:var(--tx);font-size:13px;outline:none;cursor:pointer;transition:border-color var(--tr)">
+            <option value="PostgreSQL">PostgreSQL</option>
+            <option value="MySQL">MySQL</option>
+            <option value="SQL Server">SQL Server</option>
+            <option value="Oracle">Oracle</option>
+            <option value="SQLite">SQLite</option>
+            <option value="Generic SQL">Generic SQL</option>
+          </select>
+          <div style="font-size:10px;color:var(--t3);margin-top:5px">You can override this per-schema in Step 2 if schemas use different databases.</div>
+        </div>
       </div>
     </div>
 
@@ -402,6 +422,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
       <div class="tbs">
         <button class="tb ac" data-tp="ti" onclick="swTab('ti',this)">🐛 Issues <span class="tbd" id="iBdg">0</span></button>
         <button class="tb" data-tp="ts" onclick="swTab('ts',this)">📊 Summary</button>
+        <button class="tb" data-tp="tsol" onclick="swTab('tsol',this)">💡 Solutions <span class="tbd" id="solBdg" style="background:rgba(45,140,255,.2);color:var(--ac)">0</span></button>
         <button class="tb" data-tp="tc" onclick="swTab('tc',this)" id="cmpTab">🔀 Comparison</button>
         <button class="tb" data-tp="tr" onclick="swTab('tr',this)">📅 Roadmap</button>
       </div>
@@ -416,6 +437,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
         <div id="iSecs"></div>
       </div>
       <div class="tp" id="ts"><div id="sumC"></div></div>
+      <div class="tp" id="tsol"><div id="solC"></div></div>
       <div class="tp" id="tc"><div id="cmpC"></div></div>
       <div class="tp" id="tr"><div id="rmC"></div></div>
     </div>
@@ -470,6 +492,15 @@ function detectDomain(txt) {
     if (s > bs) { bs = s; best = d; }
   }
   return bs >= 1 ? best : 'General';
+}
+
+function updateGlobalPlatform(val) {
+  // Apply to all schemas that haven't been manually changed
+  schemas.forEach(s => { s.platform = val; });
+  // Re-render to update per-schema dropdowns
+  renderSchemas();
+  // Keep global select in sync
+  document.getElementById('globalPlatform').value = val;
 }
 
 document.getElementById('biz').addEventListener('input', function() {
@@ -834,6 +865,24 @@ async function runAnalysis() {
 // ═══════════════════════════════════════════════════
 function scC(s) { return s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--me)' : 'var(--cr)'; }
 function grade(s) { return s >= 90 ? 'A' : s >= 80 ? 'B' : s >= 70 ? 'C' : s >= 60 ? 'D' : 'F'; }
+
+// Score strip tile click filter
+let activeStripFilter = null;
+function stripFilter(sev, tile) {
+  if (activeStripFilter === sev) {
+    // Deselect
+    activeStripFilter = null;
+    document.querySelectorAll('.st.clickable').forEach(t => t.classList.remove('act-crit','act-high','act-med','act-low'));
+    filterF('all', document.querySelector('.fp[data-f="all"]'));
+  } else {
+    activeStripFilter = sev;
+    document.querySelectorAll('.st.clickable').forEach(t => t.classList.remove('act-crit','act-high','act-med','act-low'));
+    tile.classList.add('act-' + sev);
+    filterF(sev, document.querySelector('.fp[data-f="' + sev + '"]'));
+    // Switch to issues tab
+    swTab('ti', document.querySelector('.tb[data-tp="ti"]'));
+  }
+}
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function goto(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 function swTab(tp, btn) { document.querySelectorAll('.tb').forEach(b => b.classList.remove('ac')); document.querySelectorAll('.tp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.getElementById(tp).classList.add('ac'); }
@@ -862,18 +911,111 @@ function fCard(f) {
   </div>`;
 }
 
+// ─── SOLUTIONS TAB ────────────────────────────────────────────────────────
+function getEffort(sev, cat) {
+  if (sev === 'critical') return { label: 'Urgent', color: 'var(--cr)' };
+  if (sev === 'high' && ['Security','Integrity'].includes(cat)) return { label: 'High', color: 'var(--hi)' };
+  if (sev === 'high') return { label: 'Medium', color: 'var(--me)' };
+  if (sev === 'medium' && cat === 'Normalization') return { label: 'Major', color: 'var(--me)' };
+  if (sev === 'medium') return { label: 'Quick', color: 'var(--lo)' };
+  return { label: 'Minor', color: 'var(--t2)' };
+}
+
+function getSolutionPoints(f) {
+  const pts = [];
+  const fix = f.fix || '';
+  const desc = f.description || '';
+  const fixLine = fix.split('\n').filter(l => !l.trim().startsWith('--') && l.trim())[0] || '';
+  if (fixLine) pts.push(fixLine.trim().substring(0, 90));
+  const descSentences = desc.split('. ');
+  const impactSentence = descSentences.find(s => s.match(/cause|risk|prevent|allow|break|loss|fail|violat|incorr/i));
+  if (impactSentence && impactSentence.trim().length > 10) pts.push(impactSentence.trim().substring(0, 100));
+  const hints = {
+    'Security':      'Review with security team before deployment.',
+    'Integrity':     'Run in a migration with a rollback plan.',
+    'Normalization': 'Create migration script; update application queries.',
+    'Relationships': 'Ensure parent table data exists before adding constraint.',
+    'Indexing':      'Monitor query performance after adding index.',
+    'Naming':        'Update all references in application code and ORM models.',
+    'Operational':   'Apply via schema migration with zero-downtime strategy.',
+    'Performance':   'Test on staging with production data volume first.',
+    'Query':         'Review all query usages in codebase.',
+  };
+  if (hints[f.category]) pts.push(hints[f.category]);
+  return pts.slice(0, 3);
+}
+
+function renderSolutionsTab(r) {
+  const c = document.getElementById('solC');
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  const sorted = [...r.allF].sort((a, b) => (sevOrder[a.severity] || 4) - (sevOrder[b.severity] || 4));
+  document.getElementById('solBdg').textContent = sorted.length;
+  const sevColors = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)' };
+  const sevBg = { critical: 'var(--crbg)', high: 'var(--hibg)', medium: 'var(--mebg)', low: 'var(--lobg)' };
+
+  function renderCards(filter) {
+    const filtered = filter === 'all' ? sorted : sorted.filter(f => f.severity === filter);
+    if (!filtered.length) return '<div style="text-align:center;padding:32px;color:var(--t3)">No solutions in this category.</div>';
+    return filtered.map(f => {
+      const effort = getEffort(f.severity, f.category);
+      const pts = getSolutionPoints(f);
+      const sc = f.schemaName ? `<span style="font-size:9px;color:var(--t3);background:var(--s3);padding:1px 5px;border-radius:3px;margin-left:4px">${esc(f.schemaName)} › ${esc(f.table)}</span>` : '';
+      return `<div class="sol-card">
+        <div class="sol-card-hdr">
+          <span class="sol-pri" style="background:${sevBg[f.severity]||'var(--s3)'};color:${sevColors[f.severity]||'var(--t2)'};border:1px solid ${sevColors[f.severity]||'var(--b)'}20">${f.severity.toUpperCase()}</span>
+          <span class="sol-title">${esc(f.title)}${sc}</span>
+          <span class="sol-effort" style="border-left:2px solid ${effort.color};color:${effort.color};padding-left:8px;font-size:10px;font-weight:600">${effort.label}</span>
+        </div>
+        <div class="sol-body">
+          <div class="sol-pts">${pts.map(p => `<div class="sol-pt">${esc(p)}</div>`).join('')}</div>
+          <div class="sol-impact">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span><strong style="color:var(--t2)">${esc(f.category)}</strong> — ${esc(f.tags && f.tags.length ? f.tags.join(', ') : 'General')}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  c.innerHTML = `
+    <div class="sol-legend">
+      <span style="font-size:11px;font-weight:600;color:var(--t2)">Effort Guide:</span>
+      <div class="sol-legend-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--cr);display:inline-block"></span>Urgent — fix before next release</div>
+      <div class="sol-legend-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--hi);display:inline-block"></span>High — schedule this sprint</div>
+      <div class="sol-legend-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--me);display:inline-block"></span>Medium / Major — plan in roadmap</div>
+      <div class="sol-legend-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--lo);display:inline-block"></span>Quick / Minor — low effort</div>
+    </div>
+    <div class="sol-filters" id="solFilters">
+      <button class="fp ac" onclick="solFilter('all',this)">All (${sorted.length})</button>
+      <button class="fp" onclick="solFilter('critical',this)">&#128308; Critical (${r.cnt.critical})</button>
+      <button class="fp" onclick="solFilter('high',this)">&#128992; High (${r.cnt.high})</button>
+      <button class="fp" onclick="solFilter('medium',this)">&#128993; Medium (${r.cnt.medium})</button>
+      <button class="fp" onclick="solFilter('low',this)">&#128994; Low (${r.cnt.low})</button>
+    </div>
+    <div id="solCards">${renderCards('all')}</div>`;
+
+  window._solSorted = sorted;
+  window._solRenderCards = renderCards;
+}
+
+function solFilter(f, btn) {
+  document.querySelectorAll('#solFilters .fp').forEach(b => b.classList.remove('ac'));
+  btn.classList.add('ac');
+  document.getElementById('solCards').innerHTML = window._solRenderCards(f);
+}
+
 function renderAll(r) {
   // Score strip
-  const tiles = [
-    { v: r.gScore, l: 'Health Score', s: 'Grade: ' + grade(r.gScore), c: scC(r.gScore) },
-    { v: r.cnt.critical, l: 'Critical', s: 'Fix immediately', c: 'var(--cr)' },
-    { v: r.cnt.high, l: 'High', s: 'Address soon', c: 'var(--hi)' },
-    { v: r.cnt.medium, l: 'Medium', s: 'Plan to fix', c: 'var(--me)' },
-    { v: r.cnt.low, l: 'Low', s: 'Best practice', c: 'var(--lo)' },
-    { v: r.allT.length, l: 'Tables', s: r.srs.length + ' schema' + (r.srs.length > 1 ? 's' : ''), c: 'var(--ac)' },
-    ...(r.domain ? [{ v: r.domain, l: 'Domain', s: 'Auto-detected', c: 'var(--pv)' }] : []),
-  ];
-  document.getElementById('scoreStrip').innerHTML = tiles.map(t => `<div class="st"><div class="v" style="color:${t.c};font-size:${typeof t.v === 'string' ? '13px' : '26px'}">${t.v}</div><div class="l">${t.l}</div><div class="sb">${t.s}</div></div>`).join('');
+  const scoreHintHTML = `<div class="score-hint-wrap"><i class="score-hint-icon">ⓘ<div class="score-hint-pop"><div class="score-hint-arrow"></div><h4>How the Health Score is calculated</h4><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span><strong>Base:</strong> 100 minus penalties per issue</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span>Critical = −15 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--hi)"></div><span>High = −8 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--me)"></div><span>Medium = −4 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--lo)"></div><span>Low = −1 pt each</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:10px;color:var(--t3)"><strong style="color:var(--t2)">Section weights:</strong> Keys &amp; Integrity 25% · Normalization 20% · Schema 20% · Security 15% · Indexing 10% · Relationships 10%<br><br><strong style="color:var(--t2)">Grades:</strong> A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60</div></div></i></div>`;
+  document.getElementById('scoreStrip').innerHTML = [
+    `<div class="st" style="position:relative"><div class="v" style="color:${scC(r.gScore)};font-size:26px">${r.gScore}</div><div class="l" style="display:flex;align-items:center;justify-content:center;gap:4px">Health Score${scoreHintHTML}</div><div class="sb">Grade: ${grade(r.gScore)}</div></div>`,
+    `<div class="st clickable" onclick="stripFilter('critical',this)"><div class="v" style="color:var(--cr)">${r.cnt.critical}</div><div class="l">Critical</div><div class="sb">Click to filter</div></div>`,
+    `<div class="st clickable" onclick="stripFilter('high',this)"><div class="v" style="color:var(--hi)">${r.cnt.high}</div><div class="l">High</div><div class="sb">Click to filter</div></div>`,
+    `<div class="st clickable" onclick="stripFilter('medium',this)"><div class="v" style="color:var(--me)">${r.cnt.medium}</div><div class="l">Medium</div><div class="sb">Click to filter</div></div>`,
+    `<div class="st clickable" onclick="stripFilter('low',this)"><div class="v" style="color:var(--lo)">${r.cnt.low}</div><div class="l">Low</div><div class="sb">Click to filter</div></div>`,
+    `<div class="st"><div class="v" style="color:var(--ac)">${r.allT.length}</div><div class="l">Tables</div><div class="sb">${r.srs.length} schema${r.srs.length > 1 ? 's' : ''}</div></div>`,
+    ...(r.domain ? [`<div class="st"><div class="v" style="color:var(--pv);font-size:13px">${r.domain}</div><div class="l">Domain</div><div class="sb">Auto-detected</div></div>`] : []),
+  ].join('');
 
   // Issues tab
   const sevO = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -916,6 +1058,8 @@ function renderAll(r) {
   const hasQ = r.srs.some(sr => sr.queries && sr.queries.trim());
   const qBlock = !hasQ ? `<div class="sk" style="margin-bottom:12px"><span style="font-size:16px;opacity:.5">📋</span><div><strong>S6 — Query Analysis skipped</strong> — No SQL queries were submitted. Add queries in Step 2 to enable query pattern analysis in the next run.</div></div>` : '';
   document.getElementById('rmC').innerHTML = qBlock + `<div class="rmp">${r.roadmap.map(p => `<div class="rph"><div class="rphh" style="background:${p.color}18;border-bottom:1px solid ${p.color}33"><div class="rpn" style="background:${p.color}22;color:${p.color}">${p.phase}</div><span class="rptt">${esc(p.title)}</span><span class="rptm">🕐 ${esc(p.timeline)}</span></div>${p.items.length ? `<div class="rpis">${p.items.map(i => `<div class="rpi">${esc(i)}</div>`).join('')}</div>` : `<div class="rpis"><div style="font-size:11px;color:var(--t3);padding:4px 0">No items in this phase ✓</div></div>`}</div>`).join('')}</div><div class="sk" style="margin-top:12px"><span style="font-size:16px;opacity:.5">🔒</span><div><strong>Data Profiling Analysis</strong> — Reserved for v2. Will include null rates, cardinality analysis, dead column detection, and query workload profiling.</div></div>`;
+
+  renderSolutionsTab(r);
 
   document.getElementById('res').classList.add('on');
   setTimeout(() => document.getElementById('res').scrollIntoView({ behavior: 'smooth' }), 100);
