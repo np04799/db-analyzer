@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB Schema Analyzer — v1.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;--s1:#161B22;--s2:#1C2333;--s3:#21262D;
+  --b:#30363D;--b2:#3D444D;
+  --ac:#2D8CFF;--ac2:#1A6FCC;--acbg:rgba(45,140,255,.08);
+  --tx:#E6EDF3;--t2:#8B949E;--t3:#6E7681;
+  --cr:#F85149;--crbg:rgba(248,81,73,.1);
+  --hi:#F0883E;--hibg:rgba(240,136,62,.1);
+  --me:#D29922;--mebg:rgba(210,153,34,.1);
+  --lo:#3FB950;--lobg:rgba(63,185,80,.1);
+  --ok:#3FB950;--pv:#A371F7;
+  --r:8px;--rl:12px;--tr:.18s ease
+}
+html{font-size:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+/* HEADER */
+.hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 20px;gap:10px}
+.hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);text-decoration:none}
+.hd-logo svg{color:var(--ac)}
+.tag{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
+.tag-v{background:var(--acbg);color:var(--ac);border:1px solid rgba(45,140,255,.2)}
+.tag-e{background:rgba(63,185,80,.1);color:var(--ok);border:1px solid rgba(63,185,80,.2)}
+.tag-s{background:var(--s3);color:var(--t2);border:1px solid var(--b)}
+.hd-r{margin-left:auto}
+.prv{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(163,113,247,.08);color:var(--pv);border:1px solid rgba(163,113,247,.2);font-size:10px;font-weight:600}
+
+/* LAYOUT */
+.lay{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 50px)}
+
+/* NAV */
+.nav{background:var(--s1);border-right:1px solid var(--b);padding:18px 13px;position:sticky;top:50px;height:calc(100vh - 50px);overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.nl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:6px 8px 3px}
+.ni{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;color:var(--t2);font-size:12px;transition:all var(--tr);user-select:none}
+.ni:hover{background:var(--s2);color:var(--tx);border-color:var(--b)}
+.ni.act{background:var(--acbg);color:var(--ac);border-color:rgba(45,140,255,.2)}
+.nsn{width:20px;height:20px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:all var(--tr)}
+.ni.act .nsn{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ndv{height:1px;background:var(--b);margin:8px 5px}
+.ntip{margin-top:auto;padding:9px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);font-size:11px;color:var(--t3);line-height:1.5}
+.ntip strong{color:var(--t2)}
+
+/* MAIN */
+.mn{padding:24px 28px;max-width:900px}
+
+/* FORM SECTIONS */
+.fs{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;transition:border-color var(--tr)}
+.fsh{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid var(--b);background:var(--s2)}
+.fsi{width:30px;height:30px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.fsh h2{font-size:13px;font-weight:600}
+.fsh p{font-size:11px;color:var(--t2);margin-top:1px}
+.ot{margin-left:auto;padding:2px 7px;border-radius:4px;background:var(--s3);color:var(--t3);font-size:10px;font-weight:600;text-transform:uppercase;white-space:nowrap}
+.fb{padding:16px}
+
+/* DOMAIN */
+.db{display:flex;align-items:center;gap:7px;margin-top:9px;padding:7px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);font-size:11px;color:var(--t2);min-height:34px}
+.dd{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.dd.on{background:var(--ok)}
+
+/* INPUTS */
+textarea,input[type=text]{width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:border-color var(--tr);resize:vertical}
+textarea{font-family:'Cascadia Code','Fira Code',monospace;font-size:11.5px;line-height:1.6}
+textarea:focus,input[type=text]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,140,255,.1)}
+textarea::placeholder,input::placeholder{color:var(--t3)}
+.ilbl{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.ilbl .op{color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0}
+
+/* SCHEMA CARD */
+.scc{display:flex;flex-direction:column;gap:12px}
+.sc{background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;transition:border-color var(--tr)}
+.sc:focus-within{border-color:var(--b2)}
+.sch{display:flex;align-items:center;gap:9px;padding:11px 13px;background:var(--s3);border-bottom:1px solid var(--b)}
+.scix{width:22px;height:22px;border-radius:6px;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.scn{flex:1;padding:5px 9px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:12px;font-weight:500;outline:none;transition:border-color var(--tr)}
+.scn:focus{border-color:var(--ac)}
+.scp{padding:5px 7px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;transition:border-color var(--tr)}
+.scp:focus{border-color:var(--ac)}
+.brm{width:26px;height:26px;border-radius:6px;background:transparent;border:1px solid transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all var(--tr);flex-shrink:0}
+.brm:hover{background:var(--crbg);color:var(--cr);border-color:rgba(248,81,73,.2)}
+.scb{padding:13px;display:flex;flex-direction:column;gap:11px}
+
+/* UPLOAD ZONE */
+.uz{border:1.5px dashed var(--b2);border-radius:var(--r);padding:9px;text-align:center;cursor:pointer;transition:all var(--tr);position:relative;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--s2);color:var(--t3);font-size:11px;min-height:38px}
+.uz:hover,.uz.dg{border-color:var(--ac);color:var(--ac);background:var(--acbg)}
+.uz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.uz.ok{border-color:var(--ok);color:var(--ok);background:rgba(63,185,80,.05)}
+.taw{display:flex;flex-direction:column;gap:5px}
+
+/* COLLAPSIBLE */
+.ct{display:flex;align-items:center;gap:7px;padding:7px 0;cursor:pointer;color:var(--t2);font-size:11px;font-weight:500;user-select:none;border:none;background:none;width:100%;border-top:1px solid var(--b);margin-top:3px;transition:color var(--tr)}
+.ct:hover{color:var(--tx)}
+.ct .cv{transition:transform .18s;font-size:9px;margin-left:auto}
+.ct.op .cv{transform:rotate(90deg)}
+.cb{display:none;padding-top:9px}
+.cb.op{display:block}
+
+/* ADD SCHEMA */
+.badd{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:var(--r);border:1.5px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:12px;font-weight:500;transition:all var(--tr);width:100%}
+.badd:hover{border-color:var(--ac);color:var(--ac);background:var(--acbg)}
+.badd:disabled{opacity:.4;cursor:not-allowed}
+
+/* OPTIONS */
+.opts{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.oc{flex:1;min-width:180px;padding:13px 15px;background:var(--s2);border:1.5px solid var(--b);border-radius:var(--rl);cursor:pointer;transition:all var(--tr);position:relative}
+.oc.sel{border-color:var(--ac);background:var(--acbg)}
+.oc.lk{opacity:.55;cursor:not-allowed}
+.oc input[type=radio]{position:absolute;opacity:0}
+.ot2{font-size:12px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.od{font-size:10px;color:var(--t2);line-height:1.4}
+.v2b{padding:1px 5px;border-radius:4px;background:rgba(210,153,34,.15);color:var(--me);border:1px solid rgba(210,153,34,.3);font-size:9px;font-weight:700}
+
+/* ANALYZE */
+.baz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:var(--rl);background:var(--ac);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all var(--tr);letter-spacing:.2px}
+.baz:hover{background:var(--ac2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,140,255,.3)}
+.baz:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.baz .sp{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.baz.ld .sp{display:block}
+.baz.ld .bl{display:none}
+
+/* PROGRESS */
+.pgs{display:none;margin-top:14px;background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px}
+.pgs.on{display:block}
+.pgbw{height:3px;background:var(--b);border-radius:2px;overflow:hidden;margin-bottom:11px}
+.pgbf{height:100%;background:var(--ac);border-radius:2px;transition:width .35s ease}
+.pgst{display:flex;flex-direction:column;gap:6px}
+.pst{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--t3)}
+.pst.dn{color:var(--ok)}
+.pst.ac{color:var(--tx)}
+.psd{width:7px;height:7px;border-radius:50%;background:var(--b2);flex-shrink:0}
+.pst.dn .psd{background:var(--ok)}
+.pst.ac .psd{background:var(--ac);animation:pulse 1s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* RESULTS */
+#res{display:none}
+#res.on{display:block}
+.rsh{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.rst{font-size:16px;font-weight:700}
+.bpdf{margin-left:auto;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);background:transparent;border:1.5px solid var(--cr);color:var(--cr);cursor:pointer;font-size:12px;font-weight:600;transition:all var(--tr)}
+.bpdf:hover{background:var(--crbg)}
+.bnw{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r);background:transparent;border:1px solid var(--b2);color:var(--t2);cursor:pointer;font-size:12px;transition:all var(--tr)}
+.bnw:hover{border-color:var(--t2);color:var(--tx)}
+
+/* SCORE STRIP */
+.ss{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin-bottom:18px}
+.st{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);padding:13px 10px;text-align:center}
+.st .v{font-size:26px;font-weight:800;line-height:1;margin-bottom:3px}
+.st .l{font-size:10px;color:var(--t2)}
+.st .sb{font-size:9px;color:var(--t3);margin-top:1px}
+
+/* TABS */
+.tbs{display:flex;gap:1px;border-bottom:1px solid var(--b);margin-bottom:18px;overflow-x:auto}
+.tb{padding:8px 15px;border:none;background:none;color:var(--t2);cursor:pointer;font-size:12px;font-weight:500;border-bottom:2px solid transparent;transition:all var(--tr);white-space:nowrap;display:flex;align-items:center;gap:5px}
+.tb:hover{color:var(--tx)}
+.tb.ac{color:var(--ac);border-bottom-color:var(--ac)}
+.tbd{padding:1px 5px;border-radius:10px;font-size:9px;font-weight:700;background:rgba(248,81,73,.15);color:var(--cr)}
+.tp{display:none}
+.tp.ac{display:block}
+
+/* RESULT SECTION */
+.rs{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;transition:border-color var(--tr)}
+.rsh2{display:flex;align-items:center;gap:9px;padding:11px 14px;cursor:pointer;user-select:none;transition:background var(--tr)}
+.rsh2:hover{background:var(--s2)}
+.ri{font-size:15px;flex-shrink:0}
+.rt{font-size:12px;font-weight:600;flex:1}
+.rsb{display:flex;align-items:center;gap:7px}
+.rp{font-size:12px;font-weight:700;min-width:38px;text-align:right}
+.rb{width:72px;height:4px;background:var(--b);border-radius:2px;overflow:hidden}
+.rf{height:100%;border-radius:2px;transition:width .6s ease}
+.rc{color:var(--t3);font-size:10px;transition:transform .18s;margin-left:3px}
+.rs.ex .rc{transform:rotate(90deg)}
+.rbd{display:none;padding:0 14px 12px}
+.rs.ex .rbd{display:block}
+
+/* FINDINGS */
+.ffs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.fp{padding:3px 10px;border-radius:18px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--b);background:transparent;color:var(--t2);transition:all var(--tr)}
+.fp:hover,.fp.ac{background:var(--s2);color:var(--tx);border-color:var(--b2)}
+.fl{display:flex;flex-direction:column;gap:7px}
+.fc{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);overflow:hidden;transition:border-color var(--tr)}
+.fc:hover{border-color:var(--b2)}
+.fch{display:flex;align-items:center;gap:7px;padding:9px 11px;cursor:pointer}
+.sp2{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;flex-shrink:0;white-space:nowrap}
+.s-critical{background:var(--crbg);color:var(--cr);border:1px solid rgba(248,81,73,.25)}
+.s-high{background:var(--hibg);color:var(--hi);border:1px solid rgba(240,136,62,.25)}
+.s-medium{background:var(--mebg);color:var(--me);border:1px solid rgba(210,153,34,.25)}
+.s-low{background:var(--lobg);color:var(--lo);border:1px solid rgba(63,185,80,.25)}
+.ftt{font-size:11px;font-weight:600;flex:1}
+.fm{display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.ftg{font-size:9px;color:var(--t3);background:var(--s3);padding:1px 5px;border-radius:3px}
+.fct{font-size:9px;color:var(--ac);opacity:.8}
+.fcc{color:var(--t3);font-size:9px;transition:transform .18s}
+.fc.ex .fcc{transform:rotate(90deg)}
+.fbd{display:none;padding:0 11px 11px}
+.fc.ex .fbd{display:block}
+.fds{font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:7px}
+.ffx{background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);padding:9px 11px;position:relative}
+.fxl{font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.fxc{font-family:'Cascadia Code','Fira Code',monospace;font-size:10.5px;color:#B9E0A5;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.bcp{padding:2px 7px;background:transparent;border:1px solid rgba(63,185,80,.3);border-radius:4px;color:var(--ok);cursor:pointer;font-size:9px;transition:all var(--tr)}
+.bcp:hover{background:rgba(63,185,80,.1)}
+.itgs{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.itg{padding:2px 6px;border-radius:3px;font-size:9px;font-weight:500;background:var(--s3);color:var(--t3)}
+
+/* DIMS */
+.dg{display:flex;flex-direction:column;gap:7px;margin-top:3px}
+.dr{display:flex;align-items:center;gap:9px}
+.dl{font-size:11px;color:var(--t2);width:150px;flex-shrink:0}
+.dbar{flex:1;height:5px;background:var(--b);border-radius:3px;overflow:hidden}
+.df{height:100%;border-radius:3px;transition:width .7s ease}
+.dsc{font-size:11px;font-weight:700;width:36px;text-align:right}
+
+/* DATA TABLE */
+.dt{width:100%;border-collapse:collapse;font-size:11px}
+.dt th{background:var(--s3);padding:7px 9px;text-align:left;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--b)}
+.dt td{padding:8px 9px;border-bottom:1px solid var(--b);color:var(--t2)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:var(--s2);color:var(--tx)}
+
+/* ROADMAP */
+.rmp{display:flex;flex-direction:column;gap:10px}
+.rph{background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden}
+.rphh{display:flex;align-items:center;gap:9px;padding:10px 13px}
+.rpn{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.rptt{font-size:12px;font-weight:600;flex:1}
+.rptm{font-size:10px;color:var(--t3)}
+.rpis{padding:3px 13px 11px;display:flex;flex-direction:column;gap:4px}
+.rpi{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--t2);line-height:1.5}
+.rpi::before{content:'→';color:var(--ac);flex-shrink:0;margin-top:1px}
+
+/* SKIPPED */
+.sk{display:flex;align-items:center;gap:9px;padding:13px 14px;background:var(--s2);border:1px dashed var(--b2);border-radius:var(--r);color:var(--t3);font-size:11px;margin-top:7px}
+
+/* COMPARISON */
+.ct2{width:100%;border-collapse:collapse;font-size:11px}
+.ct2 th{background:var(--s3);padding:7px 9px;text-align:left;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--b)}
+.ct2 td{padding:8px 9px;border-bottom:1px solid var(--b);color:var(--t2)}
+.ct2 tr:last-child td{border-bottom:none}
+.ct2 tr:hover td{background:var(--s2)}
+.stg{display:inline-flex;padding:1px 7px;border-radius:4px;background:var(--acbg);color:var(--ac);font-size:9px;font-weight:600}
+
+/* PDF OVERLAY */
+.pov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;align-items:center;justify-content:center}
+.pov.on{display:flex}
+.pom{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);padding:28px 32px;text-align:center;min-width:280px}
+.pom h3{font-size:15px;font-weight:700;margin-bottom:5px}
+.pom p{font-size:11px;color:var(--t2);margin-bottom:16px}
+.ppw{height:4px;background:var(--b);border-radius:2px;overflow:hidden}
+.ppf{height:100%;background:var(--cr);border-radius:2px;transition:width .3s ease}
+
+@media(max-width:700px){.lay{grid-template-columns:1fr}.nav{display:none}.mn{padding:14px}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hd">
+  <a href="#" class="hd-logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    DB Schema Analyzer
+  </a>
+  <span class="tag tag-v">v1.0</span>
+  <span class="tag tag-e">Rule Engine</span>
+  <span class="tag tag-s">Schema Only</span>
+  <div class="hd-r">
+    <div class="prv">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Privacy First — No data stored or transmitted
+    </div>
+  </div>
+</header>
+
+<div class="lay">
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nl">Input</div>
+    <div class="ni act" onclick="goto('s1')"><span class="nsn">1</span>Business Overview</div>
+    <div class="ni" onclick="goto('s2')"><span class="nsn">2</span>Schemas &amp; Queries</div>
+    <div class="ni" onclick="goto('s3')"><span class="nsn">3</span>Analysis Options</div>
+    <div class="ndv"></div>
+    <div class="nl">Report Sections</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S1</span>Business Context</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S2</span>Executive Summary</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S3</span>Schema &amp; Architecture</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S4</span>Keys &amp; Integrity</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S5</span>Normalization</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S6</span>Query Analysis</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S7</span>Comparison</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S8</span>Issue Register</div>
+    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S9</span>Roadmap</div>
+    <div class="ndv"></div>
+    <div class="ntip"><strong>All analysis runs in your browser.</strong><br>No schema data is ever sent to any server.</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="mn">
+
+    <!-- STEP 1 -->
+    <div class="fs" id="s1">
+      <div class="fsh">
+        <div class="fsi" style="background:rgba(45,140,255,.1)">📋</div>
+        <div><h2>Step 1 — Business Overview</h2><p>Describe your system so the report can validate schema-to-business fit</p></div>
+        <span class="ot">Optional</span>
+      </div>
+      <div class="fb">
+        <div class="ilbl">What does this system do? <span class="op">(industry, purpose, scale, compliance)</span></div>
+        <textarea id="biz" rows="4" placeholder="e.g. Multi-tenant SaaS platform for e-commerce. Manages product catalogs, orders, payments, and customer accounts. ~500K orders/day across 200 tenants. GDPR-regulated, PCI-DSS required."></textarea>
+        <div class="db"><div class="dd" id="dDot"></div><span id="dTxt" style="color:var(--t3)">Start typing to detect business domain automatically...</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="fs" id="s2">
+      <div class="fsh">
+        <div class="fsi" style="background:rgba(63,185,80,.1)">🗄️</div>
+        <div><h2>Step 2 — Schemas &amp; Queries</h2><p>Add up to 5 schemas. Queries are optional — used for performance pattern analysis.</p></div>
+      </div>
+      <div class="fb">
+        
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Load sample schema</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="loadSample('ecommerce')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">🛒 E-commerce</button>
+            <button onclick="loadSample('healthcare')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">🏥 Healthcare</button>
+            <button onclick="loadSample('saas')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">☁️ SaaS</button>
+            <button onclick="loadSample('legacy')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">⚠️ Legacy ERP</button>
+          </div>
+        </div>
+<div class="scc" id="scCards"></div>
+        <div style="margin-top:11px">
+          <button class="badd" id="addBtn" onclick="addSchema()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Schema <span id="scCnt" style="color:var(--t3);font-weight:400;font-size:11px">(1 of 5)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="fs" id="s3">
+      <div class="fsh">
+        <div class="fsi" style="background:rgba(163,113,247,.1)">⚙️</div>
+        <div><h2>Step 3 — Analysis Options</h2><p>Select analysis scope</p></div>
+      </div>
+      <div class="fb">
+        <div class="opts">
+          <label class="oc sel" id="optA">
+            <input type="radio" name="mode" value="schema" checked>
+            <div class="ot2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              Schema Only
+            </div>
+            <div class="od">Analyze structure, constraints, naming, normalization, and security posture. No data or DB connection required. Works offline.</div>
+          </label>
+          <div class="oc lk" title="Available in v2">
+            <div class="ot2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
+              Include Data <span class="v2b">v2</span> 🔒
+            </div>
+            <div class="od">Null rates, cardinality analysis, dead column detection, query workload. Requires direct DB connection.</div>
+          </div>
+        </div>
+        <button class="baz" id="azBtn" onclick="runAnalysis()">
+          <span class="bl">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:6px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Analyze Schema
+          </span>
+          <div class="sp"></div>
+        </button>
+        <div class="pgs" id="pgSec">
+          <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Running analysis...</div>
+          <div class="pgbw"><div class="pgbf" id="pgFill" style="width:0%"></div></div>
+          <div class="pgst" id="pgSteps"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="res">
+      <div class="rsh">
+        <div class="rst">Analysis Results</div>
+        <button class="bnw" onclick="resetUI()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.87"/></svg>
+          New Analysis
+        </button>
+        <button class="bpdf" onclick="exportPDF()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+          Export PDF Report
+        </button>
+      </div>
+      <div class="ss" id="scoreStrip"></div>
+      <div class="tbs">
+        <button class="tb ac" data-tp="ti" onclick="swTab('ti',this)">🐛 Issues <span class="tbd" id="iBdg">0</span></button>
+        <button class="tb" data-tp="ts" onclick="swTab('ts',this)">📊 Summary</button>
+        <button class="tb" data-tp="tc" onclick="swTab('tc',this)" id="cmpTab">🔀 Comparison</button>
+        <button class="tb" data-tp="tr" onclick="swTab('tr',this)">📅 Roadmap</button>
+      </div>
+      <div class="tp ac" id="ti">
+        <div class="ffs">
+          <button class="fp ac" data-f="all" onclick="filterF('all',this)">All</button>
+          <button class="fp" data-f="critical" onclick="filterF('critical',this)">🔴 Critical</button>
+          <button class="fp" data-f="high" onclick="filterF('high',this)">🟠 High</button>
+          <button class="fp" data-f="medium" onclick="filterF('medium',this)">🟡 Medium</button>
+          <button class="fp" data-f="low" onclick="filterF('low',this)">🟢 Low</button>
+        </div>
+        <div id="iSecs"></div>
+      </div>
+      <div class="tp" id="ts"><div id="sumC"></div></div>
+      <div class="tp" id="tc"><div id="cmpC"></div></div>
+      <div class="tp" id="tr"><div id="rmC"></div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- PDF OVERLAY -->
+<div class="pov" id="pov">
+  <div class="pom">
+    <div style="font-size:32px;margin-bottom:10px">📄</div>
+    <h3>Generating PDF Report</h3>
+    <p id="pTxt">Preparing sections...</p>
+    <div class="ppw"><div class="ppf" id="pPf" style="width:0%"></div></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let schemas = [], result = null, scCtr = 0;
+const MAX_SC = 5;
+
+// ═══════════════════════════════════════════════════
+// DOMAIN DETECTION
+// ═══════════════════════════════════════════════════
+const DOMS = {
+  'E-commerce':  ['shop','cart','order','product','payment','inventory','sku','checkout','merchant','catalog','coupon','discount'],
+  'Healthcare':  ['patient','doctor','appointment','prescription','diagnosis','hipaa','clinic','hospital','medication','lab','insurance','provider','medical'],
+  'Finance':     ['account','transaction','ledger','balance','payment','kyc','aml','loan','credit','portfolio','trading','invoice','bank','debit'],
+  'SaaS':        ['tenant','subscription','plan','workspace','billing','feature','trial','upgrade','seat','license','onboard'],
+  'HR/Payroll':  ['employee','payroll','salary','leave','department','attendance','performance','hire','benefit','shift','roster'],
+  'Logistics':   ['shipment','tracking','warehouse','carrier','dispatch','route','freight','delivery','fleet','manifest'],
+  'Education':   ['student','course','enrollment','grade','teacher','curriculum','assignment','exam','classroom','institution'],
+};
+const DOM_PRI = {
+  'Healthcare': {Security:2,Integrity:1.5},
+  'Finance':    {Integrity:2,Security:1.8,Performance:1.3},
+  'E-commerce': {Performance:1.5,Integrity:1.5,Indexing:1.4},
+  'SaaS':       {Relationships:1.4,Performance:1.3},
+};
+
+function detectDomain(txt) {
+  if (!txt || txt.trim().length < 8) return null;
+  const l = txt.toLowerCase();
+  let best = null, bs = 0;
+  for (const [d, kws] of Object.entries(DOMS)) {
+    const s = kws.filter(k => l.includes(k)).length;
+    if (s > bs) { bs = s; best = d; }
+  }
+  return bs >= 1 ? best : 'General';
+}
+
+document.getElementById('biz').addEventListener('input', function() {
+  const d = detectDomain(this.value);
+  const dot = document.getElementById('dDot'), txt = document.getElementById('dTxt');
+  if (!d) { dot.classList.remove('on'); txt.style.color='var(--t3)'; txt.textContent='Start typing to detect business domain automatically...'; }
+  else { dot.classList.add('on'); txt.style.color='var(--ok)'; txt.textContent=`Domain detected: ${d} — findings weighted accordingly`; }
+});
+
+// ═══════════════════════════════════════════════════
+// SCHEMA MANAGEMENT
+// ═══════════════════════════════════════════════════
+function addSchema(ddl='', name='') {
+  if (schemas.length >= MAX_SC) return;
+  scCtr++;
+  schemas.push({ id: scCtr, name: name || `Schema ${scCtr}`, platform: 'PostgreSQL', ddl, queries: '' });
+  renderSchemas();
+}
+
+function removeSchema(id) {
+  if (schemas.length <= 1) return;
+  schemas = schemas.filter(s => s.id !== id);
+  renderSchemas();
+}
+
+function updSc(id, field, val) {
+  const s = schemas.find(x => x.id === id);
+  if (s) s[field] = val;
+}
+
+function toggleQ(id) {
+  document.getElementById('qt'+id).classList.toggle('op');
+  document.getElementById('qb'+id).classList.toggle('op');
+}
+
+function renderSchemas() {
+  const c = document.getElementById('scCards');
+  c.innerHTML = '';
+  schemas.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'sc'; d.id = 'sc' + s.id;
+    d.innerHTML = `
+      <div class="sch">
+        <div class="scix">${i+1}</div>
+        <input class="scn" value="${esc(s.name)}" placeholder="Schema name..." oninput="updSc(${s.id},'name',this.value)">
+        <select class="scp" onchange="updSc(${s.id},'platform',this.value)">
+          ${['PostgreSQL','MySQL','SQL Server','Oracle','SQLite','Generic SQL'].map(p=>`<option${s.platform===p?' selected':''}>${p}</option>`).join('')}
+        </select>
+        ${schemas.length > 1 ? `<button class="brm" onclick="removeSchema(${s.id})" title="Remove schema">✕</button>` : '<div style="width:26px"></div>'}
+      </div>
+      <div class="scb">
+        <div>
+          <div class="ilbl">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Schema / DDL
+          </div>
+          <div class="taw">
+            <textarea id="ddl${s.id}" rows="7"
+              placeholder="Paste CREATE TABLE statements here...&#10;&#10;CREATE TABLE users (&#10;  id SERIAL PRIMARY KEY,&#10;  email VARCHAR(255) NOT NULL UNIQUE,&#10;  created_at TIMESTAMPTZ DEFAULT NOW()&#10;);"
+              oninput="updSc(${s.id},'ddl',this.value)">${esc(s.ddl)}</textarea>
+            <div class="uz" id="uz${s.id}" ondragover="dov(event,this)" ondragleave="dlv(this)" ondrop="doDrop(event,${s.id},'ddl')">
+              <input type="file" accept=".sql,.txt,.ddl,.json" onchange="filePk(event,${s.id},'ddl')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Drop file or click to upload (.sql .txt .ddl .json)</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <button class="ct" id="qt${s.id}" onclick="toggleQ(${s.id})">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 9h18v4H3zM3 15h18v4H3z"/></svg>
+            &nbsp;Query Input &nbsp;<span style="color:var(--t3);font-size:10px;font-weight:400">— optional, for pattern analysis</span>
+            <span class="cv">▶</span>
+          </button>
+          <div class="cb" id="qb${s.id}">
+            <div class="ilbl">SQL Queries <span class="op">(SELECT / UPDATE / DELETE patterns for analysis)</span></div>
+            <div class="taw">
+              <textarea id="qry${s.id}" rows="5"
+                placeholder="Paste SQL queries to check for performance anti-patterns, missing indexes, and best practice violations..."
+                oninput="updSc(${s.id},'queries',this.value)">${esc(s.queries)}</textarea>
+              <div class="uz" id="uq${s.id}" ondragover="dov(event,this)" ondragleave="dlv(this)" ondrop="doDrop(event,${s.id},'queries')">
+                <input type="file" accept=".sql,.txt" onchange="filePk(event,${s.id},'queries')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Upload query file (.sql .txt)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    c.appendChild(d);
+  });
+  document.getElementById('addBtn').disabled = schemas.length >= MAX_SC;
+  document.getElementById('scCnt').textContent = `(${schemas.length} of ${MAX_SC})`;
+}
+
+function dov(e, el) { e.preventDefault(); el.classList.add('dg'); }
+function dlv(el) { el.classList.remove('dg'); }
+function doDrop(e, id, field) { e.preventDefault(); const f = e.dataTransfer.files[0]; if (!f) return; e.currentTarget.classList.remove('dg'); readFile(f, id, field); }
+function filePk(e, id, field) { const f = e.target.files[0]; if (f) readFile(f, id, field); }
+function readFile(file, id, field) {
+  const r = new FileReader();
+  r.onload = e => {
+    const txt = e.target.result;
+    updSc(id, field, txt);
+    const ta = document.getElementById(field === 'ddl' ? 'ddl' + id : 'qry' + id);
+    if (ta) ta.value = txt;
+    if (field === 'ddl') {
+      const s = schemas.find(x => x.id === id);
+      if (s && s.name.startsWith('Schema ')) {
+        s.name = file.name.replace(/\.(sql|ddl|txt|json)$/i, '').replace(/[_-]/g, ' ');
+        const inp = document.querySelector('#sc' + id + ' .scn');
+        if (inp) inp.value = s.name;
+      }
+    }
+    const z = document.getElementById(field === 'ddl' ? 'uz' + id : 'uq' + id);
+    if (z) { z.classList.add('ok'); const sp = z.querySelector('span'); if (sp) sp.textContent = '✓ ' + file.name + ' loaded'; }
+  };
+  r.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════
+// RULE ENGINE — 40+ RULES
+// ═══════════════════════════════════════════════════
+const RW = new Set(['select','from','where','table','index','order','group','by','key','value','type','date','time','timestamp','name','data','status','user','users','session','column','schema','database','primary','unique','foreign','check','default','null','not','and','or','in','like','join','left','right','inner','outer','on','as','distinct','count','sum','max','min','avg','insert','update','delete','drop','create','alter','constraint']);
+
+function parseDDL(ddl) {
+  const tables = [];
+  if (!ddl || !ddl.trim()) return tables;
+  const rx = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"[]?(\w+)[`"\]]?\s*\(([^;]*?)\)\s*;?/gis;
+  let m;
+  while ((m = rx.exec(ddl)) !== null) {
+    const tn = m[1], body = m[2];
+    const cols = [], con = { pk: false, fks: [], uniques: [] };
+    for (const line of body.split('\n').map(l => l.trim()).filter(Boolean)) {
+      const ul = line.toUpperCase();
+      if (ul.startsWith('PRIMARY KEY')) { con.pk = true; continue; }
+      if (ul.startsWith('FOREIGN KEY')) { const f = line.match(/FOREIGN\s+KEY\s*\(([^)]+)\)\s*REFERENCES\s+(\w+)/i); if (f) con.fks.push({ col: f[1].trim(), ref: f[2] }); continue; }
+      if (ul.startsWith('UNIQUE')) { const u = line.match(/UNIQUE\s*\(([^)]+)\)/i); if (u) con.uniques.push(u[1]); continue; }
+      if (ul.startsWith('CONSTRAINT')) {
+        if (ul.includes('PRIMARY KEY')) con.pk = true;
+        const f = line.match(/FOREIGN\s+KEY\s*\(([^)]+)\)\s*REFERENCES\s+(\w+)/i); if (f) con.fks.push({ col: f[1].trim(), ref: f[2] });
+        const u = line.match(/UNIQUE\s*\(([^)]+)\)/i); if (u) con.uniques.push(u[1]);
+        continue;
+      }
+      if (ul.match(/^(INDEX|KEY |CONSTRAINT)\s/)) continue;
+      const cm = line.match(/^[`"[]?(\w+)[`"\]]?\s+(\w+(?:\s*\([^)]*\))?)(.*)/i);
+      if (!cm) continue;
+      const cn = cm[1], ct = cm[2].toUpperCase(), rest = cm[3].toUpperCase();
+      const col = { name: cn, type: ct, nullable: !rest.includes('NOT NULL'), hasPK: rest.includes('PRIMARY KEY') || ul.includes('PRIMARY KEY'), hasUnique: rest.includes('UNIQUE'), hasDefault: rest.includes('DEFAULT'), autoInc: rest.includes('AUTO_INCREMENT') || rest.includes('AUTOINCREMENT') || ct.includes('SERIAL') || ct.includes('IDENTITY') };
+      if (col.hasPK) con.pk = true;
+      cols.push(col);
+    }
+    tables.push({ name: tn, columns: cols, constraints: con });
+  }
+  return tables;
+}
+
+function runRules(tables, queryTxt, overview, domain) {
+  const findings = [];
+  const dp = DOM_PRI[domain] || {};
+  function add(sev, cat, title, table, desc, fix, tags = []) {
+    findings.push({ severity: sev, category: cat, title, table: table || 'Global', description: desc, fix, tags, db: dp[cat] || 1 });
+  }
+
+  for (const t of tables) {
+    const tn = t.name, cols = t.columns, con = t.constraints;
+    const cns = cols.map(c => c.name.toLowerCase());
+
+    // R01 Missing PK
+    if (!con.pk) add('critical','Integrity',`Missing PRIMARY KEY on ${tn}`,tn,`Table "${tn}" has no PRIMARY KEY. Without a PK, rows cannot be uniquely identified, duplicates can accumulate silently, and foreign keys cannot reliably reference this table.`,`ALTER TABLE ${tn} ADD COLUMN id SERIAL PRIMARY KEY;\n-- Or designate existing column:\nALTER TABLE ${tn} ADD PRIMARY KEY (id);`,['Integrity','Relationships']);
+    // R02 Empty table
+    if (!cols.length) add('critical','Integrity',`Empty table definition: ${tn}`,tn,`"${tn}" has no columns — likely incomplete DDL submission.`,`Review and complete the DDL for ${tn}.`,[]);
+    // R03 Reserved word as table name
+    if (RW.has(tn.toLowerCase())) add('high','Naming',`Reserved word as table name: ${tn}`,tn,`"${tn}" is a SQL reserved word. Requires quoting in every query and causes ORM bugs.`,`ALTER TABLE ${tn} RENAME TO ${tn}_data;`,['Maintainability']);
+    // R04 Wide table
+    if (cols.length > 30) add('medium','Normalization',`Wide table (${cols.length} cols) — normalization candidate: ${tn}`,tn,`"${tn}" has ${cols.length} columns. Tables over 30 columns usually contain column groups that belong in separate entities — a normalization opportunity.`,`Review "${tn}" for column groups that can be extracted. Consider vertical partitioning.`,['Performance','Maintainability']);
+    // R05 Missing created_at
+    const hasCA = cns.some(n => ['created_at','createdat','created_date','ins_dt','insert_date','date_created'].includes(n));
+    if (!hasCA) add('medium','Operational',`Missing created_at on ${tn}`,tn,`No created_at timestamp on "${tn}". Without it, record creation time cannot be tracked for debugging, compliance, or reporting.`,`ALTER TABLE ${tn} ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`,['Maintainability']);
+    // R06 Missing updated_at
+    const hasUA = cns.some(n => ['updated_at','updatedat','modified_at','upd_dt','update_date','date_modified'].includes(n));
+    if (!hasUA) add('low','Operational',`Missing updated_at on ${tn}`,tn,`No updated_at timestamp on "${tn}". Change tracking, cache invalidation, and sync patterns require this column.`,`ALTER TABLE ${tn} ADD COLUMN updated_at TIMESTAMPTZ;\nCREATE OR REPLACE FUNCTION update_ts() RETURNS trigger AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;\nCREATE TRIGGER trg_${tn.toLowerCase()}_upd BEFORE UPDATE ON ${tn} FOR EACH ROW EXECUTE FUNCTION update_ts();`,['Maintainability']);
+    // R07 ALLCAPS table
+    if (tn === tn.toUpperCase() && tn.length > 2) add('medium','Naming',`ALLCAPS table name: ${tn}`,tn,`"${tn}" uses all-caps (legacy Oracle/DB2 style). Modern SQL prefers lowercase snake_case for readability.`,`ALTER TABLE ${tn} RENAME TO ${tn.toLowerCase()};`,['Maintainability']);
+    // R08 Mixed naming conventions
+    const hasSnk = cns.some(n => n.includes('_')), hasCml = cns.some(n => n.match(/[a-z][A-Z]/));
+    if (hasSnk && hasCml) add('medium','Naming',`Mixed naming conventions in ${tn}`,tn,`"${tn}" mixes snake_case and camelCase column names. Inconsistency causes ORM bugs and increases cognitive overhead.`,`-- Standardize all columns to snake_case:\n-- ALTER TABLE ${tn} RENAME COLUMN createdAt TO created_at;`,['Maintainability']);
+    // R09 Single-column table
+    if (cols.length === 1) add('low','Architecture',`Single-column table: ${tn}`,tn,`"${tn}" has only 1 column — usually incomplete schema or a table that should be merged with its parent.`,`Review whether "${tn}" needs more columns or should be merged into a parent table.`,[]);
+    // R10 No soft-delete on user tables
+    const ufTbls = ['users','user','customers','customer','accounts','account','members','member','employees'];
+    if (ufTbls.some(u => tn.toLowerCase() === u)) {
+      const hasSD = cns.some(n => ['deleted_at','is_deleted','deactivated_at','archived_at','active','is_active'].includes(n));
+      if (!hasSD) add('low','Operational',`No soft-delete pattern on ${tn}`,tn,`User-facing tables should support soft delete to preserve audit history and allow account recovery. Hard-deleting breaks FK references and loses data.`,`ALTER TABLE ${tn} ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;\n-- Query active records: WHERE deleted_at IS NULL`,['Maintainability']);
+    }
+    // FK indexes
+    con.fks.forEach(fk => add('high','Indexing',`Missing index on FK column: ${tn}.${fk.col}`,tn,`FK column "${fk.col}" (references ${fk.ref}) has no index. Every JOIN on this column will perform a full table scan as data grows.`,`CREATE INDEX idx_${tn.toLowerCase()}_${fk.col.toLowerCase()} ON ${tn}(${fk.col});`,['Performance','Indexing']));
+
+    for (const col of cols) {
+      const cn = col.name.toLowerCase(), ct = col.type;
+      // R Reserved word col
+      if (RW.has(cn) && cn !== 'id') add('medium','Naming',`Reserved word as column: ${tn}.${col.name}`,tn,`"${col.name}" is a SQL reserved word. Causes query failures without quoting, and breaks many ORMs.`,`ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO ${col.name}_value;`,['Maintainability']);
+      // R Cryptic column
+      if (col.name.length <= 2 && cn !== 'id') add('low','Naming',`Cryptic column name: ${tn}.${col.name}`,tn,`"${col.name}" is too short to be self-documenting. Cryptic names increase onboarding time and risk maintenance errors.`,`-- Rename to a descriptive name:\nALTER TABLE ${tn} RENAME COLUMN ${col.name} TO <descriptive_name>;`,['Maintainability']);
+      // R FLOAT for money
+      const moneyP = ['price','total','amount','balance','cost','salary','fee','charge','tax','discount','revenue','profit'];
+      if (['FLOAT','REAL','DOUBLE'].some(f => ct.startsWith(f)) && moneyP.some(p => cn.includes(p))) add('high','Integrity',`FLOAT for monetary column: ${tn}.${col.name}`,tn,`FLOAT has floating-point precision errors. For monetary values this causes rounding discrepancies that compound over millions of transactions. Use DECIMAL.`,`ALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE DECIMAL(12,2);`,['Integrity']);
+      // R Password plaintext
+      if (['pwd','password','passwd','pass'].includes(cn)) { const sm = ct.match(/\((\d+)\)/); if (sm && parseInt(sm[1]) < 60) add('critical','Security',`Plaintext password risk: ${tn}.${col.name}`,tn,`"${col.name}" (${ct}) is too short for a bcrypt hash (60 chars) or argon2 hash (95+ chars). This strongly suggests plaintext password storage — a critical security vulnerability.`,`ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO password_hash;\nALTER TABLE ${tn} ALTER COLUMN password_hash TYPE VARCHAR(255);\n-- Enforce bcrypt/argon2id hashing in application layer.`,['Security']); }
+      // R PII columns
+      if (['ssn','sin','nin','passport','national_id','tax_id','nid'].some(p => cn === p || cn.includes(p))) add('critical','Security',`Unprotected PII column: ${tn}.${col.name}`,tn,`"${col.name}" stores government identity data. GDPR and HIPAA require this to be encrypted at rest. Plain VARCHAR storage is a compliance violation.`,`-- Use pgcrypto for column-level encryption:\n-- Store: pgp_sym_encrypt(value, 'encryption_key')\n-- Read:  pgp_sym_decrypt(${col.name}, 'encryption_key')::TEXT\nALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE BYTEA;`,['Security']);
+      // R Credit card
+      if (['card_number','credit_card','cvv','card_cvv'].some(p => cn === p || cn.includes('card_num'))) add('critical','Security',`Payment card data column: ${tn}.${col.name}`,tn,`Storing raw card data violates PCI-DSS. Use a payment tokenization provider (Stripe, Braintree) and store only tokens.`,`ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO payment_token;\nALTER TABLE ${tn} ALTER COLUMN payment_token TYPE VARCHAR(64);\n-- Never store raw card numbers. Use a PCI-compliant payment vault.`,['Security']);
+      // R FK-looking column without FK constraint
+      if ((cn.endsWith('_id') || cn.endsWith('_no')) && cn !== 'id') {
+        const ref = cn.replace(/_id$|_no$/, '');
+        const hasFk = con.fks.some(f => f.col.toLowerCase() === cn);
+        if (!hasFk && ref.length > 1) add('high','Relationships',`Missing FK constraint: ${tn}.${col.name}`,tn,`"${col.name}" looks like a foreign key reference but has no FOREIGN KEY constraint. Allows orphaned records and prevents the DB from enforcing referential integrity.`,`ALTER TABLE ${tn} ADD CONSTRAINT fk_${tn.toLowerCase()}_${col.name.toLowerCase()}\n  FOREIGN KEY (${col.name}) REFERENCES ${ref}(id)\n  ON DELETE RESTRICT ON UPDATE CASCADE;`,['Integrity','Relationships']);
+      }
+      // R Missing UNIQUE on email
+      if (['email','email_address','user_email'].includes(cn)) { const hasUq = col.hasUnique || con.uniques.some(u => u.toLowerCase().includes(cn)); if (!hasUq) add('high','Integrity',`Missing UNIQUE on email: ${tn}.${col.name}`,tn,`Email columns must have a UNIQUE constraint to prevent duplicate accounts. Without it, the same email can register multiple times.`,`ALTER TABLE ${tn} ADD CONSTRAINT uq_${tn.toLowerCase()}_email UNIQUE (${col.name});`,['Integrity']); }
+      // R Repeating column groups (1NF)
+      const rm = col.name.match(/^(.+?)(\d+)$/);
+      if (rm) { const base = rm[1].toLowerCase(); if (['addr','address','phone','image_url','img','tag','email','contact','file','note'].some(p => base.includes(p))) { const ex = cols.filter(c => { const m2 = c.name.match(/^(.+?)(\d+)$/); return m2 && m2[1].toLowerCase() === base && c !== col; }); if (ex.length > 0 && col.name.endsWith('1')) add('high','Normalization',`Repeating column group (1NF violation): ${tn}.${base}*`,tn,`Columns "${base}1", "${base}2", etc. are a repeating group — a 1NF violation. Limits scalability (what if you need a 4th value?) and forces a fixed maximum.`,`-- Extract to a related table:\nCREATE TABLE ${tn}_${base.replace(/[^a-z]/g,'')}s (\n  id SERIAL PRIMARY KEY,\n  ${tn.replace(/s$/,'')}_id INT NOT NULL REFERENCES ${tn}(id),\n  ${base} TEXT NOT NULL,\n  sort_order INT DEFAULT 0,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);`,['Normalization','Maintainability']); } }
+      // R Derived columns (3NF)
+      if (['total','balance','full_name','fullname','final_total','net_amount','gross_total'].some(d => cn === d)) add('medium','Normalization',`Potential derived column: ${tn}.${col.name}`,tn,`"${col.name}" looks like a computed/derived value. Storing derived results creates update anomalies — the stored value can become inconsistent with its source columns.`,`-- Option 1: Remove and compute in queries\n-- Option 2: Use a generated/computed column (PostgreSQL 12+):\nALTER TABLE ${tn} DROP COLUMN ${col.name};\nALTER TABLE ${tn} ADD COLUMN ${col.name} NUMERIC GENERATED ALWAYS AS (qty * unit_price) STORED;`,['Normalization','Integrity']);
+      // R NOT NULL on key columns
+      if (['email','name','status','type'].some(r => cn === r || cn.endsWith('_' + r)) && col.nullable && !col.hasPK) add('medium','Integrity',`NULL allowed on key column: ${tn}.${col.name}`,tn,`"${col.name}" should logically be NOT NULL but is nullable. Unexpected NULLs cause incorrect query results and application bugs.`,`ALTER TABLE ${tn} ALTER COLUMN ${col.name} SET NOT NULL;`,['Integrity']);
+      // R Token/secret storage
+      if (['token','secret','api_key','refresh_token','access_token'].some(p => cn === p || cn.includes('_token') || cn.includes('_secret'))) add('high','Security',`Sensitive token column: ${tn}.${col.name}`,tn,`"${col.name}" stores tokens or secrets. These should be hashed (validation tokens) or encrypted (refresh tokens). Plain storage is a security risk.`,`-- Hash validation tokens before storing:\nUPDATE ${tn} SET ${col.name} = encode(sha256(${col.name}::bytea), 'hex');\n-- Add expiry if not present:\nALTER TABLE ${tn} ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;`,['Security']);
+      // R IP as VARCHAR
+      if (['ip','ip_address','client_ip','remote_ip'].includes(cn) && ct.startsWith('VARCHAR')) add('low','Performance',`IP address as VARCHAR: ${tn}.${col.name}`,tn,`Storing IP addresses as VARCHAR wastes space and prevents efficient IP-range queries. Use native INET type.`,`-- PostgreSQL:\nALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE INET USING ${col.name}::INET;`,['Performance']);
+      // R CHAR for variable data
+      if (ct.startsWith('CHAR(') && !ct.startsWith('VARCHAR')) { const sm = ct.match(/\((\d+)\)/); if (sm && parseInt(sm[1]) > 4) add('low','Performance',`CHAR where VARCHAR preferred: ${tn}.${col.name}`,tn,`CHAR(${sm[1]}) pads values with spaces and wastes storage for variable-length data. Use VARCHAR unless values are guaranteed fixed-length.`,`ALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE VARCHAR(${sm[1]});`,['Performance']); }
+    }
+  }
+
+  // Cross-table: isolated tables (no FK in or out)
+  const refed = new Set(tables.flatMap(t => t.constraints.fks.map(f => f.ref.toLowerCase())));
+  tables.forEach(t => {
+    if (!t.constraints.fks.length && !refed.has(t.name.toLowerCase()) && tables.length > 1)
+      findings.push({ severity: 'medium', category: 'Relationships', title: `Isolated table — no relationships: ${t.name}`, table: t.name, description: `"${t.name}" has no FK relationships in or out. In a multi-table schema this usually means missing relationship definitions.`, fix: `Review whether "${t.name}" should reference or be referenced by other tables. Add FK constraints as appropriate.`, tags: ['Relationships'], db: 1 });
+  });
+
+  // Domain mismatch warning
+  if (domain && domain !== 'General') {
+    const allCols = tables.flatMap(t => t.columns.map(c => c.name.toLowerCase()));
+    const kws = DOMS[domain] || [];
+    const mc = kws.filter(k => allCols.some(c => c.includes(k)) || tables.some(t => t.name.toLowerCase().includes(k))).length;
+    if (mc === 0 && tables.length > 0) findings.push({ severity: 'medium', category: 'Architecture', title: `Schema may not match described domain: ${domain}`, table: 'Global', description: `Business overview suggests a "${domain}" system but no ${domain}-related tables or columns were found. Possible causes: not all schemas submitted, overview too generic, or this is an auxiliary service schema.`, fix: `Verify all relevant schemas have been submitted. If this is an auxiliary service, note it in the Business Overview for accurate report context.`, tags: ['Architecture'], db: 1 });
+  }
+
+  // Query analysis rules
+  if (queryTxt) {
+    queryTxt.split(';').map(q => q.trim()).filter(q => q.length > 5).forEach((q, qi) => {
+      const qu = q.toUpperCase();
+      if (qu.includes('SELECT *')) findings.push({ severity: 'medium', category: 'Query', title: `SELECT * usage in query ${qi+1}`, table: 'Query', description: 'SELECT * retrieves all columns including large TEXT/BLOB fields unnecessarily. It also breaks silently when columns are added or removed.', fix: `-- Specify explicit column list:\nSELECT id, name, email, created_at FROM ...`, tags: ['Performance'], db: 1 });
+      if ((qu.includes('UPDATE ') || qu.includes('DELETE ')) && !qu.includes('WHERE')) findings.push({ severity: 'critical', category: 'Query', title: `UPDATE/DELETE without WHERE in query ${qi+1}`, table: 'Query', description: 'A missing WHERE clause will modify or delete every row in the table. This is one of the most destructive SQL mistakes.', fix: `-- Always include a WHERE clause:\n${q.substring(0, 50)}...\nWHERE id = :id`, tags: ['Integrity'], db: 1 });
+      if (qu.match(/FROM\s+\w+\s*,\s*\w+/)) findings.push({ severity: 'low', category: 'Query', title: `Implicit JOIN (comma syntax) in query ${qi+1}`, table: 'Query', description: 'Comma-separated FROM clause is an implicit cross-join. Use explicit JOIN syntax for clarity and to avoid accidental Cartesian products.', fix: `-- Replace: FROM table1, table2 WHERE t1.id = t2.ref_id\n-- With: FROM table1 INNER JOIN table2 ON t1.id = t2.ref_id`, tags: ['Performance','Maintainability'], db: 1 });
+    });
+  }
+
+  return findings;
+}
+
+// ═══════════════════════════════════════════════════
+// SCORING — HYBRID OPTION C
+// ═══════════════════════════════════════════════════
+const SEC_C = {
+  'Schema & Architecture': ['Architecture','Naming','Operational'],
+  'Keys & Integrity':      ['Integrity'],
+  'Normalization':         ['Normalization'],
+  'Security':              ['Security'],
+  'Indexing & Performance':['Indexing','Performance'],
+  'Relationships':         ['Relationships'],
+  'Query Analysis':        ['Query'],
+};
+const SEC_W = { 'Keys & Integrity': .25, 'Normalization': .20, 'Schema & Architecture': .20, 'Security': .15, 'Indexing & Performance': .10, 'Relationships': .10 };
+const PEN = { critical: 15, high: 8, medium: 4, low: 1 };
+
+function scoreSecs(findings) {
+  const secs = {};
+  for (const [sn, cats] of Object.entries(SEC_C)) {
+    const sf = findings.filter(f => cats.includes(f.category));
+    const pen = sf.reduce((a, f) => a + (PEN[f.severity] || 0), 0);
+    secs[sn] = { score: Math.max(0, Math.min(100, 100 - pen)), findings: sf };
+  }
+  return secs;
+}
+function calcScore(secs) {
+  let w = 0, tw = 0;
+  for (const [sn, wt] of Object.entries(SEC_W)) { if (secs[sn]) { w += secs[sn].score * wt; tw += wt; } }
+  return Math.round(tw > 0 ? w / tw : 0);
+}
+function calcRoadmap(findings) {
+  const sv = { critical: [], high: [], medium: [], low: [] };
+  findings.forEach(f => { if (sv[f.severity]) sv[f.severity].push(f.title); });
+  return [
+    { phase: 1, title: 'Immediate Critical Fixes', timeline: 'Week 1', color: '#F85149', items: sv.critical.slice(0, 8) },
+    { phase: 2, title: 'High Priority Improvements', timeline: 'Weeks 2–3', color: '#F0883E', items: sv.high.slice(0, 8) },
+    { phase: 3, title: 'Medium Term Refactoring', timeline: 'Month 1–2', color: '#D29922', items: sv.medium.slice(0, 8) },
+    { phase: 4, title: 'Optimization & Hardening', timeline: 'Month 2–3', color: '#3FB950', items: sv.low.slice(0, 6) },
+  ];
+}
+
+// ═══════════════════════════════════════════════════
+// RUN ANALYSIS
+// ═══════════════════════════════════════════════════
+async function runAnalysis() {
+  if (!schemas.some(s => s.ddl.trim().length > 10)) { alert('Please add at least one schema before analyzing.'); return; }
+  const btn = document.getElementById('azBtn');
+  btn.classList.add('ld'); btn.disabled = true;
+  document.getElementById('pgSec').classList.add('on');
+  document.getElementById('res').classList.remove('on');
+
+  const steps = ['Parsing DDL statements...','Detecting business domain...','Running integrity rules...','Checking normalization...','Analyzing security posture...','Evaluating naming conventions...','Checking relationships & FKs...','Analyzing query patterns...','Scoring all sections...','Building remediation roadmap...'];
+  const sc = document.getElementById('pgSteps');
+  sc.innerHTML = steps.map((s, i) => `<div class="pst${i===0?' ac':''}" id="ps${i}"><div class="psd"></div>${s}</div>`).join('');
+  let si = 0;
+  const iv = setInterval(() => {
+    if (si < steps.length - 1) { document.getElementById('ps'+si).className = 'pst dn'; si++; document.getElementById('ps'+si).className = 'pst ac'; document.getElementById('pgFill').style.width = ((si+1)/steps.length*100) + '%'; }
+    else clearInterval(iv);
+  }, 200);
+
+  await new Promise(r => setTimeout(r, 80));
+  try {
+    const overview = document.getElementById('biz').value;
+    const domain = detectDomain(overview);
+
+    const srs = schemas.filter(s => s.ddl.trim()).map(s => {
+      const tables = parseDDL(s.ddl);
+      const allQ = schemas.map(x => x.queries).filter(Boolean).join('\n');
+      const findings = runRules(tables, s.queries, overview, domain);
+      const secs = scoreSecs(findings);
+      return { ...s, tables, findings, secs, score: calcScore(secs) };
+    });
+
+    const allF = srs.flatMap(sr => sr.findings.map(f => ({ ...f, schemaName: sr.name })));
+    const allT = srs.flatMap(sr => sr.tables.map(t => ({ ...t, schemaName: sr.name })));
+    const gSecs = scoreSecs(allF);
+    const gScore = calcScore(gSecs);
+    const cnt = { critical: 0, high: 0, medium: 0, low: 0 };
+    allF.forEach(f => { if (cnt[f.severity] !== undefined) cnt[f.severity]++; });
+
+    result = { srs, allF, allT, gSecs, gScore, roadmap: calcRoadmap(allF), domain, overview, cnt };
+
+    clearInterval(iv);
+    steps.forEach((_, i) => document.getElementById('ps'+i).className = 'pst dn');
+    document.getElementById('pgFill').style.width = '100%';
+    await new Promise(r => setTimeout(r, 350));
+    renderAll(result);
+  } catch (e) {
+    clearInterval(iv);
+    alert('Analysis error: ' + e.message);
+    console.error(e);
+  }
+  btn.classList.remove('ld'); btn.disabled = false;
+  document.getElementById('pgSec').classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function scC(s) { return s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--me)' : 'var(--cr)'; }
+function grade(s) { return s >= 90 ? 'A' : s >= 80 ? 'B' : s >= 70 ? 'C' : s >= 60 ? 'D' : 'F'; }
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function goto(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function swTab(tp, btn) { document.querySelectorAll('.tb').forEach(b => b.classList.remove('ac')); document.querySelectorAll('.tp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.getElementById(tp).classList.add('ac'); }
+function filterF(f, btn) { document.querySelectorAll('.fp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.querySelectorAll('.fc').forEach(c => { c.style.display = (f === 'all' || c.dataset.sev === f) ? '' : 'none'; }); document.querySelectorAll('.rs').forEach(s => { const v = s.querySelectorAll('.fc:not([style*="none"])').length; s.style.display = v ? '' : 'none'; }); }
+function resetUI() { document.getElementById('res').classList.remove('on'); result = null; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function sIcon(s) { return { 'Schema & Architecture': '🏗️', 'Keys & Integrity': '🔑', 'Normalization': '📐', 'Security': '🔒', 'Indexing & Performance': '⚡', 'Relationships': '🔗', 'Query Analysis': '📋', 'Other': '📌' }[s] || '📌'; }
+function copyFix(btn) { const code = btn.closest('.ffx').querySelector('.fxc').textContent; navigator.clipboard.writeText(code).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy SQL', 1500); }); }
+
+function fCard(f) {
+  const tags = (f.tags || []).map(t => `<span class="itg">${esc(t)}</span>`).join('');
+  const sch = f.schemaName ? `<span class="ftg">${esc(f.schemaName)}</span>` : '';
+  return `<div class="fc" data-sev="${f.severity}">
+    <div class="fch" onclick="this.parentElement.classList.toggle('ex')">
+      <span class="sp2 s-${f.severity}">${f.severity}</span>
+      <span class="ftt">${esc(f.title)}</span>
+      <div class="fm">${sch}<span class="ftg">${esc(f.table)}</span><span class="fct">${esc(f.category)}</span><span class="fcc">▶</span></div>
+    </div>
+    <div class="fbd">
+      <div class="fds">${esc(f.description)}</div>
+      <div class="ffx">
+        <div class="fxl"><span>✅ Recommended Fix</span><button class="bcp" onclick="copyFix(this)">Copy SQL</button></div>
+        <div class="fxc">${esc(f.fix)}</div>
+      </div>
+      ${tags ? `<div class="itgs">${tags}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderAll(r) {
+  // Score strip
+  const tiles = [
+    { v: r.gScore, l: 'Health Score', s: 'Grade: ' + grade(r.gScore), c: scC(r.gScore) },
+    { v: r.cnt.critical, l: 'Critical', s: 'Fix immediately', c: 'var(--cr)' },
+    { v: r.cnt.high, l: 'High', s: 'Address soon', c: 'var(--hi)' },
+    { v: r.cnt.medium, l: 'Medium', s: 'Plan to fix', c: 'var(--me)' },
+    { v: r.cnt.low, l: 'Low', s: 'Best practice', c: 'var(--lo)' },
+    { v: r.allT.length, l: 'Tables', s: r.srs.length + ' schema' + (r.srs.length > 1 ? 's' : ''), c: 'var(--ac)' },
+    ...(r.domain ? [{ v: r.domain, l: 'Domain', s: 'Auto-detected', c: 'var(--pv)' }] : []),
+  ];
+  document.getElementById('scoreStrip').innerHTML = tiles.map(t => `<div class="st"><div class="v" style="color:${t.c};font-size:${typeof t.v === 'string' ? '13px' : '26px'}">${t.v}</div><div class="l">${t.l}</div><div class="sb">${t.s}</div></div>`).join('');
+
+  // Issues tab
+  const sevO = { critical: 0, high: 1, medium: 2, low: 3 };
+  const sorted = [...r.allF].sort((a, b) => (sevO[a.severity] || 4) - (sevO[b.severity] || 4));
+  const secMap = {};
+  for (const [sn, cats] of Object.entries(SEC_C)) { const sf = sorted.filter(f => cats.includes(f.category)); if (sf.length) secMap[sn] = sf; }
+  const un = sorted.filter(f => !Object.values(SEC_C).flat().includes(f.category));
+  if (un.length) secMap['Other'] = un;
+  const isc = document.getElementById('iSecs'); isc.innerHTML = '';
+  for (const [sn, sf] of Object.entries(secMap)) {
+    const sec = r.gSecs[sn]; const pct = sec ? sec.score : 100;
+    const el = document.createElement('div'); el.className = 'rs ex'; el.dataset.section = sn;
+    el.innerHTML = `<div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">${sIcon(sn)}</span><span class="rt">${sn} <span style="font-size:10px;color:var(--t3);font-weight:400">(${sf.length} finding${sf.length > 1 ? 's' : ''})</span></span><div class="rsb"><div class="rb"><div class="rf" style="width:${pct}%;background:${scC(pct)}"></div></div><span class="rp" style="color:${scC(pct)}">${pct}%</span></div><span class="rc">▶</span></div><div class="rbd"><div class="fl">${sf.map(f => fCard(f)).join('')}</div></div>`;
+    isc.appendChild(el);
+  }
+  if (!sorted.length) isc.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">🎉</div>No issues found — excellent schema!</div>';
+  document.getElementById('iBdg').textContent = r.allF.length;
+
+  // Summary tab
+  const DC = { 'Schema & Architecture': '#2D8CFF', 'Keys & Integrity': '#F85149', 'Normalization': '#A371F7', 'Security': '#FF6B6B', 'Indexing & Performance': '#F0883E', 'Relationships': '#3FB950', 'Query Analysis': '#D29922' };
+  const dimRows = Object.entries(r.gSecs).map(([k, v]) => `<div class="dr"><div class="dl">${k}</div><div class="dbar"><div class="df" style="width:${v.score}%;background:${DC[k] || 'var(--ac)'}"></div></div><div class="dsc" style="color:${DC[k] || 'var(--ac)'}">${v.score}%</div></div>`).join('');
+  const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📋</span><span class="rt">S1 — Business Context</span><span class="rc">▶</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
+  const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
+  document.getElementById('sumC').innerHTML = `${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div><span class="rc">▶</span></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span><span class="rc">▶</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
+  document.getElementById('sumC').querySelectorAll('.rsh2').forEach(h => h.onclick = () => h.parentElement.classList.toggle('ex'));
+
+  // Comparison tab
+  const cmpC = document.getElementById('cmpC');
+  if (r.srs.length < 2) {
+    cmpC.innerHTML = `<div class="sk"><span style="font-size:18px;opacity:.5">🔀</span><div><strong>Schema Comparison</strong> — requires 2 or more schemas. Add another schema and re-analyze to see a side-by-side comparison.</div></div>`;
+    document.getElementById('cmpTab').style.opacity = '.5';
+  } else {
+    document.getElementById('cmpTab').style.opacity = '1';
+    const rows = r.srs.map(sr => { const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; }); return `<tr><td><strong>${esc(sr.name)}</strong><br><span style="font-size:9px;color:var(--t3)">${esc(sr.platform)}</span></td><td><span style="font-size:18px;font-weight:800;color:${scC(sr.score)}">${sr.score}%</span></td><td>${sr.tables.length}</td><td>${sr.tables.reduce((s, t) => s + t.columns.length, 0)}</td><td><span style="color:var(--cr)">${c2.critical}</span></td><td><span style="color:var(--hi)">${c2.high}</span></td><td><span style="color:var(--me)">${c2.medium}</span></td><td><span style="color:var(--lo)">${c2.low}</span></td><td>${sr.findings.length}</td></tr>`; }).join('');
+    cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span><span class="rc">▶</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    cmpC.querySelector('.rsh2').onclick = () => cmpC.querySelector('.rs').classList.toggle('ex');
+  }
+
+  // Roadmap tab
+  const hasQ = r.srs.some(sr => sr.queries && sr.queries.trim());
+  const qBlock = !hasQ ? `<div class="sk" style="margin-bottom:12px"><span style="font-size:16px;opacity:.5">📋</span><div><strong>S6 — Query Analysis skipped</strong> — No SQL queries were submitted. Add queries in Step 2 to enable query pattern analysis in the next run.</div></div>` : '';
+  document.getElementById('rmC').innerHTML = qBlock + `<div class="rmp">${r.roadmap.map(p => `<div class="rph"><div class="rphh" style="background:${p.color}18;border-bottom:1px solid ${p.color}33"><div class="rpn" style="background:${p.color}22;color:${p.color}">${p.phase}</div><span class="rptt">${esc(p.title)}</span><span class="rptm">🕐 ${esc(p.timeline)}</span></div>${p.items.length ? `<div class="rpis">${p.items.map(i => `<div class="rpi">${esc(i)}</div>`).join('')}</div>` : `<div class="rpis"><div style="font-size:11px;color:var(--t3);padding:4px 0">No items in this phase ✓</div></div>`}</div>`).join('')}</div><div class="sk" style="margin-top:12px"><span style="font-size:16px;opacity:.5">🔒</span><div><strong>Data Profiling Analysis</strong> — Reserved for v2. Will include null rates, cardinality analysis, dead column detection, and query workload profiling.</div></div>`;
+
+  document.getElementById('res').classList.add('on');
+  setTimeout(() => document.getElementById('res').scrollIntoView({ behavior: 'smooth' }), 100);
+}
+
+// ═══════════════════════════════════════════════════
+// PDF EXPORT — ALL 9 SECTIONS + APPENDIX
+// ═══════════════════════════════════════════════════
+function setPP(pct, msg) { document.getElementById('pPf').style.width = pct + '%'; document.getElementById('pTxt').textContent = msg; }
+
+function exportPDF() {
+  if (!result) return;
+  document.getElementById('pov').classList.add('on');
+  setTimeout(() => buildPDF(result), 150);
+}
+
+function buildPDF(r) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297, ML = 18, MR = 18, PW = W - ML - MR;
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Color helpers
+  const C = { dk: [13, 17, 23], s1: [22, 27, 34], s2: [33, 38, 51], ac: [45, 140, 255], pv: [163, 113, 247], tx: [230, 237, 243], t2: [139, 148, 158], t3: [110, 118, 129], bd: [48, 54, 61], cr: [248, 81, 73], hi: [240, 136, 62], me: [210, 153, 34], lo: [63, 185, 80], ok: [63, 185, 80], wh: [255, 255, 255] };
+  const SEV_C = { critical: C.cr, high: C.hi, medium: C.me, low: C.lo };
+  const SEV_BG = { critical: [70, 20, 20], high: [65, 38, 12], medium: [60, 48, 10], low: [15, 45, 18] };
+
+  function sf(...c) { doc.setFillColor(...c); }
+  function sd(...c) { doc.setDrawColor(...c); }
+  function st(...c) { doc.setTextColor(...c); }
+  function scol(s) { return s >= 75 ? C.ok : s >= 50 ? C.me : C.cr; }
+
+  let pg = 0, y = 0;
+
+  function newPage(first) {
+    if (pg > 0) doc.addPage();
+    pg++; y = first ? 16 : 20;
+    if (!first) {
+      sf(...C.dk); doc.rect(0, 0, W, 12, 'F');
+      sf(...C.ac); doc.rect(0, 0, 1.5, 12, 'F');
+      st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      doc.text('DB SCHEMA ANALYSIS REPORT — v1.0', ML, 5.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+      doc.text(r.srs.map(s => s.name).join(' · '), ML, 10);
+      doc.text('Page ' + pg, W - ML, 5.5, { align: 'right' });
+      doc.text(now, W - ML, 10, { align: 'right' });
+      sf(...C.s1); doc.rect(0, H - 7, W, 7, 'F');
+      st(...C.t3); doc.setFontSize(6);
+      doc.text('Privacy First — No data stored or transmitted | All analysis performed locally in browser', ML, H - 2.5);
+      doc.text(`Health Score: ${r.gScore}% | Grade: ${grade(r.gScore)}`, W - ML, H - 2.5, { align: 'right' });
+      y = 18;
+    }
+  }
+
+  function checkY(need) { if (y + need > H - 12) newPage(false); }
+
+  function secBanner(num, title, pct) {
+    checkY(14);
+    sf(...C.dk); doc.roundedRect(ML, y, PW, 12, 2, 2, 'F');
+    sf(...C.ac); doc.rect(ML, y, 2, 12, 'F');
+    st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text('S' + num, ML + 5, y + 5);
+    st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.text(title, ML + 13, y + 8.5);
+    if (pct !== undefined) { const sc = scol(pct), bx = ML + PW - 36, bw = 28; sf(...C.bd); doc.roundedRect(bx, y + 4, bw, 3.5, 1, 1, 'F'); sf(...sc); doc.roundedRect(bx, y + 4, Math.max(bw * (pct / 100), 1), 3.5, 1, 1, 'F'); st(...sc); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(pct + '%', ML + PW - 3, y + 8.5, { align: 'right' }); }
+    y += 17;
+  }
+
+  function bodyTxt(txt, w) { checkY(6); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); const lines = doc.splitTextToSize(txt, w || PW); doc.text(lines, ML, y); y += lines.length * 4.5 + 2; }
+
+  function subHdr(txt) { checkY(8); st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(txt, ML, y); y += 6; }
+
+  function fBlock(f, num) {
+    const sev = f.severity, sc = SEV_C[sev] || C.t2, bg = SEV_BG[sev] || C.s2;
+    const descL = doc.splitTextToSize(f.description || '', PW - 8);
+    const fixL = doc.splitTextToSize('Fix: ' + (f.fix || ''), PW - 10);
+    const hh = 7.5, dh = descL.length * 4 + 3, fh = fixL.length * 3.8 + 5, total = hh + dh + fh + 3;
+    checkY(total + 4);
+    const cx = ML, cy = y;
+    sf(...bg); doc.roundedRect(cx, cy, PW, total, 1.5, 1.5, 'F');
+    sd(...sc); doc.setLineWidth(0.3); doc.roundedRect(cx, cy, PW, total, 1.5, 1.5, 'D');
+    sf(...sc); doc.rect(cx, cy, 1.8, total, 'F');
+    st(...sc); doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+    doc.text('[' + sev.toUpperCase() + ']', cx + 4, cy + 5.5);
+    st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    const titleStr = (num ? num + '. ' : '') + (f.title || '');
+    doc.text(doc.splitTextToSize(titleStr, PW - 55)[0], cx + 25, cy + 5.5);
+    st(...C.t3); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.text((f.schemaName ? f.schemaName + ' › ' : '') + (f.table || ''), cx + PW - 2, cy + 5.5, { align: 'right' });
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text(descL, cx + 4, cy + hh + 2.5);
+    sf([18, 45, 25]); doc.roundedRect(cx + 2, cy + hh + dh + 1, PW - 4, fh, 1, 1, 'F');
+    st([120, 200, 130]); doc.setFont('courier', 'normal'); doc.setFontSize(7);
+    doc.text(fixL, cx + 4, cy + hh + dh + 5);
+    y += total + 4;
+  }
+
+  // ── PAGE 1: COVER ────────────────────────────────────────
+  newPage(true);
+  sf(...C.dk); doc.rect(0, 0, W, 82, 'F');
+  sf(...C.ac); doc.rect(0, 0, 2, 82, 'F');
+  st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('DATABASE SCHEMA ANALYSIS REPORT', ML, 20);
+  st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.text('Schema Design Review', ML, 34);
+  st([148, 163, 184]); doc.setFont('helvetica', 'normal'); doc.setFontSize(15); doc.text('& Best Practice Analysis', ML, 45);
+  st([148, 163, 184]); doc.setFontSize(8.5);
+  doc.text('Schemas: ' + r.srs.map(s => s.name).join(' · '), ML, 57);
+  doc.text('Generated: ' + now + '   |   Rule Engine v1.0   |   Schema Only', ML, 64);
+  sf([22, 35, 55]); doc.roundedRect(ML, 69, 80, 6, 1, 1, 'F');
+  st([163, 113, 247]); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+  doc.text('🔒  Privacy First — No data stored or transmitted. All analysis runs locally.', ML + 3, 73);
+
+  y = 90;
+  const kpis = [{ l: 'Health Score', v: r.gScore + '%', c: scol(r.gScore) }, { l: 'Tables', v: String(r.allT.length), c: C.ac }, { l: 'Issues', v: String(r.allF.length), c: C.hi }, { l: 'Critical', v: String(r.cnt.critical), c: C.cr }, { l: 'Domain', v: r.domain || 'General', c: C.pv }];
+  const kw = PW / kpis.length;
+  kpis.forEach((k, i) => {
+    const kx = ML + i * kw;
+    sf(...C.s1); sd(...C.bd); doc.setLineWidth(0.3); doc.rect(kx, y, kw, 18, 'FD');
+    st(...k.c); doc.setFont('helvetica', 'bold'); doc.setFontSize(i < 4 ? 16 : 10);
+    doc.text(String(k.v), kx + kw / 2, y + 10, { align: 'center' });
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.text(k.l, kx + kw / 2, y + 15.5, { align: 'center' });
+  });
+
+  setPP(12, 'S1 — Business context...');
+
+  // ── S1 BUSINESS CONTEXT ──────────────────────────────────
+  newPage(false);
+  secBanner(1, 'Business Context');
+  if (r.overview) {
+    bodyTxt(r.overview, PW);
+    if (r.domain) { y += 2; sf([20, 38, 75]); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('Domain Detected: ' + r.domain + ' — Findings weighted accordingly', ML + 4, y + 5); y += 11; }
+  } else { sf(...C.s2); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text('No business overview provided. General domain — neutral weighting applied.', ML + 4, y + 5); y += 11; }
+  y += 3;
+  subHdr('Schema Inventory');
+  r.srs.forEach(sr => { sf(...C.s2); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(sr.name, ML + 4, y + 5); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(sr.platform + '  |  ' + sr.tables.length + ' tables  |  ' + sr.tables.reduce((s, t) => s + t.columns.length, 0) + ' columns  |  ' + sr.findings.length + ' findings  |  Score: ' + sr.score + '%', ML + 48, y + 5); y += 10; });
+  y += 3;
+  sf([18, 42, 20]); doc.roundedRect(ML, y, PW, 9, 1, 1, 'F');
+  st(...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('Analysis Scope — v1: Schema Only', ML + 4, y + 4.5);
+  st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text('Includes: Table structure · Keys & constraints · Naming · Normalization (1NF–3NF) · Security posture · Relationships · Query patterns', ML + 4, y + 8.5);
+  y += 13;
+  sf([40, 30, 12]); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F');
+  st(...C.me); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text('Not analyzed in v1 (coming in v2): Actual data profiling · Null rates · Cardinality · Query workload · Index usage statistics · DB connection', ML + 4, y + 5);
+  y += 12;
+
+  setPP(25, 'S2 — Executive summary...');
+
+  // ── S2 EXEC SUMMARY ──────────────────────────────────────
+  secBanner(2, 'Executive Summary', r.gScore);
+  const bw2 = PW / 4;
+  [['Critical', r.cnt.critical, C.cr], ['High', r.cnt.high, C.hi], ['Medium', r.cnt.medium, C.me], ['Low', r.cnt.low, C.lo]].forEach(([lbl, cnt, clr], i) => {
+    const bx = ML + i * bw2;
+    sf(...C.s1); sd(...clr); doc.setLineWidth(0.3); doc.roundedRect(bx, y, bw2 - 2, 18, 1, 1, 'FD');
+    st(...clr); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(String(cnt), bx + bw2 / 2 - 1, y + 11, { align: 'center' });
+    doc.setFontSize(7); doc.text(lbl, bx + bw2 / 2 - 1, y + 16.5, { align: 'center' });
+  });
+  y += 23;
+  const DC2 = { 'Schema & Architecture': C.ac, 'Keys & Integrity': C.cr, 'Normalization': C.pv, 'Security': [255, 107, 107], 'Indexing & Performance': C.hi, 'Relationships': C.lo, 'Query Analysis': C.me };
+  Object.entries(r.gSecs).forEach(([k, v]) => {
+    checkY(7); const dc = DC2[k] || C.ac;
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(k, ML, y);
+    const bx = ML + 62, bw3 = PW - 62 - 18, fi = bw3 * (v.score / 100);
+    sf(...C.bd); doc.roundedRect(bx, y - 3.5, bw3, 4, 1, 1, 'F');
+    if (fi > 0) { sf(...dc); doc.roundedRect(bx, y - 3.5, fi, 4, 1, 1, 'F'); }
+    st(...dc); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(v.score + '%', ML + PW - 2, y, { align: 'right' });
+    y += 7;
+  });
+
+  setPP(38, 'S3 — Schema & architecture...');
+
+  // ── S3 SCHEMA & ARCHITECTURE ─────────────────────────────
+  newPage(false);
+  secBanner(3, 'Schema & Architecture', r.gSecs['Schema & Architecture']?.score);
+  bodyTxt('Evaluates logical entity design, physical implementation choices, and operational readiness across all submitted schemas.');
+  y += 3;
+  subHdr('3.1  Entity Inventory');
+  const tc = [55, 22, 22, 22, PW - 55 - 22 - 22 - 22];
+  sf(...C.s1); doc.rect(ML, y, PW, 7, 'F');
+  st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+  ['Table', 'Schema', 'Cols', 'PK', 'Worst Finding'].forEach((h, i) => { let x = ML; for (let j = 0; j < i; j++) x += tc[j]; doc.text(h, x + 2, y + 5); });
+  y += 7;
+  r.srs.flatMap(sr => sr.tables.map(t => {
+    const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name);
+    const wo = tf.reduce((w, f) => { const o = { critical: 0, high: 1, medium: 2, low: 3 }; return (o[f.severity] ?? 4) < (o[w] ?? 4) ? f.severity : w; }, 'none');
+    const wc = SEV_C[wo] || C.ok;
+    checkY(7);
+    sf(...C.s2); doc.rect(ML, y, PW, 6.5, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 6.5, 'D');
+    st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(t.name, ML + 2, y + 4.5);
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.name, ML + 57, y + 4.5); doc.text(String(t.columns.length), ML + 79, y + 4.5);
+    st(t.constraints.pk ? ...C.ok : ...C.cr); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 101, y + 4.5);
+    st(...wc); doc.text(wo.toUpperCase(), ML + 123 + 2, y + 4.5);
+    y += 6.5;
+  }));
+  y += 5;
+  const s3f = r.allF.filter(f => ['Architecture', 'Naming', 'Operational'].includes(f.category));
+  if (s3f.length) { subHdr('3.2  Logical / Physical / Operational Findings (' + s3f.length + ')'); s3f.slice(0, 10).forEach(f => fBlock(f)); }
+
+  setPP(50, 'S4 — Keys & integrity...');
+
+  // ── S4 KEYS & INTEGRITY ───────────────────────────────────
+  newPage(false);
+  secBanner(4, 'Keys & Integrity', r.gSecs['Keys & Integrity']?.score);
+  bodyTxt('Evaluates primary keys, foreign key constraints, unique constraints, and data type integrity across all tables.');
+  y += 3;
+  subHdr('Integrity Checklist by Table');
+  sf(...C.s1); doc.rect(ML, y, PW, 7, 'F');
+  st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+  ['Table', 'Schema', 'PK', 'FK Defined', 'Email UQ', 'Data Type'].forEach((h, i) => { const ws = [50, 38, 18, 24, 22, PW - 50 - 38 - 18 - 24 - 22]; let x = ML; for (let j = 0; j < i; j++) x += ws[j]; doc.text(h, x + 2, y + 5); });
+  y += 7;
+  r.srs.flatMap(sr => sr.tables.map((t, ri) => {
+    const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name);
+    const hasFkI = tf.some(f => f.category === 'Relationships');
+    const hasTyI = tf.some(f => f.title.includes('FLOAT') || f.title.includes('monetary'));
+    const hasEI = tf.some(f => f.title.includes('UNIQUE') && f.title.includes('email'));
+    checkY(7);
+    sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 6.5, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 6.5, 'D');
+    st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(t.name, ML + 2, y + 4.5);
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.name, ML + 52, y + 4.5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+    st(t.constraints.pk ? ...C.ok : ...C.cr); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 90, y + 4.5);
+    st(hasFkI ? ...C.me : ...C.ok); doc.text(hasFkI ? 'GAP' : 'OK', ML + 108, y + 4.5);
+    st(hasEI ? ...C.cr : ...C.ok); doc.text(hasEI ? 'MISS' : 'OK', ML + 132, y + 4.5);
+    st(hasTyI ? ...C.cr : ...C.ok); doc.text(hasTyI ? 'ISSUE' : 'OK', ML + 154, y + 4.5);
+    y += 6.5;
+  }));
+  y += 5;
+  const s4f = r.allF.filter(f => ['Integrity', 'Relationships'].includes(f.category));
+  if (s4f.length) { subHdr('Findings (' + s4f.length + ')'); s4f.slice(0, 12).forEach((f, i) => fBlock(f, i + 1)); }
+
+  setPP(63, 'S5 — Normalization...');
+
+  // ── S5 NORMALIZATION ─────────────────────────────────────
+  newPage(false);
+  secBanner(5, 'Normalization & Constraints', r.gSecs['Normalization']?.score);
+  bodyTxt('Evaluates 1NF, 2NF, and 3NF conformance. Also reviews CHECK constraints, DEFAULT values, and NOT NULL discipline.');
+  y += 3;
+  subHdr('Normal Form Assessment');
+  sf(...C.s1); doc.rect(ML, y, PW, 7, 'F');
+  st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+  ['Form', 'Requirement', 'Status', 'Affected Tables'].forEach((h, i) => { const ws = [16, 65, 22, PW - 16 - 65 - 22]; let x = ML; for (let j = 0; j < i; j++) x += ws[j]; doc.text(h, x + 2, y + 5); });
+  y += 7;
+  [{ nf: '1NF', req: 'Atomic values; no repeating groups', kws: ['repeating', '1nf'] }, { nf: '2NF', req: 'No partial dependency on composite PK', kws: ['partial', '2nf'] }, { nf: '3NF', req: 'No transitive dependencies', kws: ['derived', 'transitive', 'computed'] }].forEach((nr, ri) => {
+    const hasV = r.allF.some(f => nr.kws.some(kw => f.title.toLowerCase().includes(kw) || f.description.toLowerCase().includes(kw)));
+    const vTbls = [...new Set(r.allF.filter(f => nr.kws.some(kw => f.title.toLowerCase().includes(kw) || f.description.toLowerCase().includes(kw))).map(f => f.table))].slice(0, 4).join(', ') || 'None';
+    sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
+    st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(nr.nf, ML + 2, y + 5);
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(nr.req, ML + 18, y + 5);
+    st(hasV ? ...C.cr : ...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(hasV ? 'VIOLATIONS' : 'PASS', ML + 83, y + 5);
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(vTbls, ML + 105 + 2, y + 5);
+    y += 7;
+  });
+  y += 4;
+  const s5f = r.allF.filter(f => f.category === 'Normalization');
+  if (s5f.length) { subHdr('Normalization Findings (' + s5f.length + ')'); s5f.slice(0, 12).forEach((f, i) => fBlock(f, i + 1)); }
+
+  setPP(73, 'S6 — Query analysis...');
+
+  // ── S6 QUERY ANALYSIS ────────────────────────────────────
+  newPage(false);
+  const hasQ = r.srs.some(sr => sr.queries && sr.queries.trim());
+  const s6f = r.allF.filter(f => f.category === 'Query');
+  secBanner(6, 'Query Analysis');
+  if (!hasQ) {
+    sf([38, 32, 12]); doc.roundedRect(ML, y, PW, 13, 2, 2, 'F'); sd([90, 65, 20]); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, 13, 2, 2, 'D');
+    st(...C.me); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('Section Skipped — No Queries Submitted', ML + 5, y + 6);
+    st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text('Add SQL queries in the Query Input fields and re-analyze to enable query pattern analysis.', ML + 5, y + 11);
+    y += 18;
+  } else {
+    bodyTxt(s6f.length + ' query findings across ' + r.srs.filter(sr => sr.queries).length + ' schema(s).');
+    y += 2; s6f.forEach((f, i) => fBlock(f, i + 1));
+  }
+
+  // ── S7 SCHEMA COMPARISON ─────────────────────────────────
+  setPP(80, 'S7 — Schema comparison...');
+  if (r.srs.length > 1) {
+    newPage(false);
+    secBanner(7, 'Schema Comparison');
+    const cw = [42, 20, 20, 18, 18, 18, 18, PW - 42 - 20 - 20 - 18 - 18 - 18 - 18];
+    sf(...C.s1); doc.rect(ML, y, PW, 7, 'F');
+    st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+    ['Schema', 'Platform', 'Health', 'Tables', 'Critical', 'High', 'Medium', 'Total'].forEach((h, i) => { let x = ML; for (let j = 0; j < i; j++) x += cw[j]; doc.text(h, x + 2, y + 5); });
+    y += 7;
+    r.srs.forEach((sr, ri) => {
+      const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; });
+      sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
+      st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(sr.name, ML + 2, y + 5);
+      st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.platform, ML + 44, y + 5);
+      st(...scol(sr.score)); doc.setFont('helvetica', 'bold'); doc.text(sr.score + '%', ML + 64, y + 5);
+      st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(String(sr.tables.length), ML + 84, y + 5);
+      st(...C.cr); doc.text(String(c2.critical), ML + 102, y + 5);
+      st(...C.hi); doc.text(String(c2.high), ML + 120, y + 5);
+      st(...C.me); doc.text(String(c2.medium), ML + 138, y + 5);
+      st(...C.tx); doc.text(String(sr.findings.length), ML + 156, y + 5);
+      y += 7;
+    });
+  }
+
+  // ── S8 ISSUE REGISTER ────────────────────────────────────
+  setPP(88, 'S8 — Issue register...');
+  newPage(false);
+  secBanner(8, 'Issue Register — All ' + r.allF.length + ' Findings');
+  bodyTxt('Complete register ordered by severity. Each finding includes root cause and a concrete SQL remediation recommendation.');
+  y += 3;
+  const allSorted = [...r.allF].sort((a, b) => ({ critical: 0, high: 1, medium: 2, low: 3 }[a.severity] - { critical: 0, high: 1, medium: 2, low: 3 }[b.severity]));
+  allSorted.forEach((f, i) => fBlock(f, i + 1));
+
+  // ── S9 ROADMAP ───────────────────────────────────────────
+  setPP(94, 'S9 — Roadmap...');
+  newPage(false);
+  secBanner(9, 'Remediation Roadmap');
+  bodyTxt('Phased remediation plan prioritized by business impact and implementation risk. Address all Critical items before migrating or scaling.');
+  y += 3;
+  r.roadmap.forEach(p => {
+    const pc = [parseInt(p.color.slice(1, 3), 16), parseInt(p.color.slice(3, 5), 16), parseInt(p.color.slice(5, 7), 16)];
+    const ih = Math.max(p.items.length * 5.5 + 10, 14);
+    checkY(ih + 14);
+    sf(...pc); doc.roundedRect(ML, y, PW, 9, 1.5, 1.5, 'F');
+    st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Phase ' + p.phase + '  —  ' + p.title, ML + 4, y + 6.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(p.timeline, ML + PW - 3, y + 6.5, { align: 'right' });
+    y += 9;
+    sf([245, 248, 250]); doc.roundedRect(ML, y, PW, ih, 0, 0, 'F'); sd(...pc); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, ih, 0, 0, 'D');
+    y += 3;
+    if (p.items.length) { p.items.forEach(item => { st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); const lines = doc.splitTextToSize('→  ' + item, PW - 8); doc.text(lines, ML + 4, y + 3); y += lines.length * 4.2 + 2; }); }
+    else { st(...C.t3); doc.setFontSize(7.5); doc.text('No items in this phase ✓', ML + 4, y + 4); y += 8; }
+    y += 5;
+  });
+
+  // ── APPENDIX ─────────────────────────────────────────────
+  setPP(98, 'Appendix...');
+  newPage(false);
+  secBanner('A', 'Appendix — Rule Engine Reference & v2 Preview');
+  subHdr('Rules Applied (v1.0 — 40+ rules)');
+  const rules = ['R01: Missing PRIMARY KEY', 'R02: Empty table definition', 'R03: Reserved word as table name', 'R04: Wide table (30+ columns)', 'R05: Missing created_at timestamp', 'R06: Missing updated_at timestamp', 'R07: ALLCAPS table name', 'R08: Mixed naming conventions', 'R09: Single-column table', 'R10: No soft-delete on user tables', 'R11: Missing FK index', 'R12: Reserved word as column name', 'R13: Cryptic column name (<3 chars)', 'R14: FLOAT for monetary columns', 'R15: Plaintext password risk', 'R16: Unprotected PII column (SSN/NIN)', 'R17: Payment card data column', 'R18: FK-looking column without FK constraint', 'R19: Missing UNIQUE on email column', 'R20: Repeating column groups (1NF violation)', 'R21: Derived/computed columns (3NF)', 'R22: NULL allowed on key columns', 'R23: Sensitive token column', 'R24: IP address stored as VARCHAR', 'R25: CHAR where VARCHAR preferred', 'R26: Isolated table (no relationships)', 'R27: Domain/schema mismatch', 'R28: Cross-schema FK gap detection', 'R41: SELECT * in queries', 'R42: UPDATE/DELETE without WHERE', 'R43: Implicit JOIN (comma syntax)'];
+  const half = Math.ceil(rules.length / 2);
+  rules.slice(0, half).forEach((rule, i) => { checkY(5); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(rule, ML, y + i * 0); });
+  y += half * 4.5 + 3;
+  sf([18, 42, 20]); doc.roundedRect(ML, y, PW, 34, 2, 2, 'F');
+  st(...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Coming in v2 — Data Analysis & Enterprise Features', ML + 4, y + 7);
+  st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+  ['• Data Profiling: Null rates, cardinality, value distribution, dead column detection', '• Direct DB Connection: Auto-extract schema from PostgreSQL, MySQL, SQL Server', '• Query Workload: Slow query log analysis, actual index usage, N+1 detection', '• Schema History: Track health score over time, before/after comparison reports', '• Team Features: Assign findings to engineers, Jira/Linear integration, fix tracking', '• Auth & Login: User accounts, project management, role-based access'].forEach((item, i) => { doc.text(item, ML + 4, y + 13 + i * 5); });
+
+  setPP(100, 'Saving PDF...');
+  setTimeout(() => {
+    const names = r.srs.map(s => s.name.replace(/\s+/g, '_')).join('_');
+    doc.save(`DB_Schema_Analysis_${names}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    document.getElementById('pov').classList.remove('on');
+  }, 300);
+}
+
+
+// SAMPLE SCHEMAS
+const SAMPLES = {
+  ecommerce: `CREATE TABLE users (\n  id INT,\n  Name VARCHAR(255),\n  EMAIL VARCHAR(255),\n  pwd VARCHAR(50),\n  created DATETIME,\n  addr TEXT, addr2 TEXT,\n  phone VARCHAR(20), phone2 VARCHAR(20),\n  is_deleted INT DEFAULT 0\n);\n\nCREATE TABLE orders (\n  order_id INT PRIMARY KEY,\n  user INT,\n  status VARCHAR(50),\n  total FLOAT,\n  discount FLOAT,\n  tax FLOAT,\n  final_total FLOAT,\n  notes TEXT,\n  created DATETIME\n);\n\nCREATE TABLE order_items (\n  id INT PRIMARY KEY,\n  order_id INT,\n  product_id INT,\n  qty INT,\n  price FLOAT,\n  total FLOAT\n);\n\nCREATE TABLE products (\n  product_id INT PRIMARY KEY,\n  name VARCHAR(500),\n  price FLOAT,\n  sale_price FLOAT,\n  category VARCHAR(100),\n  is_active INT DEFAULT 1,\n  image_url TEXT,\n  image_url2 TEXT,\n  image_url3 TEXT\n);`,
+
+  healthcare: `CREATE TABLE patient (\n  patient_id INT PRIMARY KEY,\n  first_name VARCHAR(100),\n  last_name VARCHAR(100),\n  dob DATE,\n  ssn VARCHAR(11),\n  address VARCHAR(500),\n  insurance_number VARCHAR(50),\n  allergies TEXT\n);\n\nCREATE TABLE appointment (\n  id INT PRIMARY KEY,\n  patient INT,\n  doctor INT,\n  date DATETIME,\n  type VARCHAR(100),\n  status VARCHAR(50)\n);\n\nCREATE TABLE prescription (\n  id INT,\n  patient_id INT,\n  drug VARCHAR(200),\n  dosage VARCHAR(100),\n  start_date DATE,\n  end_date DATE\n);\n\nCREATE TABLE billing (\n  bill_id INT PRIMARY KEY,\n  patient_id INT,\n  amount FLOAT,\n  paid FLOAT,\n  balance FLOAT,\n  status VARCHAR(50)\n);`,
+
+  saas: `CREATE TABLE tenants (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  slug VARCHAR(100) UNIQUE NOT NULL,\n  plan VARCHAR(50) DEFAULT 'free',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  email VARCHAR(255) NOT NULL,\n  password_hash VARCHAR(255) NOT NULL,\n  role VARCHAR(50) DEFAULT 'member',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE projects (\n  id UUID PRIMARY KEY,\n  tenant_id UUID,\n  name VARCHAR(255),\n  owner_id UUID,\n  created_at TIMESTAMPTZ\n);\n\nCREATE TABLE tasks (\n  id UUID PRIMARY KEY,\n  project_id UUID,\n  title VARCHAR(255),\n  assignee_id UUID,\n  status VARCHAR(50),\n  due_date DATE,\n  created_at TIMESTAMPTZ\n);`,
+
+  legacy: `CREATE TABLE CUST_MST (\n  CUST_NO CHAR(10),\n  CUST_NM VARCHAR(60),\n  CUST_ADD1 VARCHAR(80),\n  CUST_ADD2 VARCHAR(80),\n  PH1 VARCHAR(20),\n  PH2 VARCHAR(20),\n  FAX VARCHAR(20),\n  CUST_STAT CHAR(1),\n  CR_LIM NUMERIC(12,2),\n  FLAG1 CHAR(1),\n  FLAG2 CHAR(1)\n);\n\nCREATE TABLE ORD_HDR (\n  ORD_NO CHAR(12),\n  CUST_NO CHAR(10),\n  ORD_DT DATE,\n  ORD_STAT CHAR(2),\n  ORD_TOT NUMERIC(14,2),\n  INV_NO CHAR(12)\n);\n\nCREATE TABLE ORD_DTL (\n  ORD_NO CHAR(12),\n  LN_NO SMALLINT,\n  PART_NO CHAR(15),\n  QTY_ORD NUMERIC(8,2),\n  QTY_SHIP NUMERIC(8,2),\n  UNIT_PRC NUMERIC(10,4),\n  EXT_AMT NUMERIC(12,2)\n);`
+};
+
+function loadSample(key) {
+  const sc = schemas[0];
+  if (!sc) return;
+  sc.ddl = SAMPLES[key];
+  sc.name = {ecommerce:'E-commerce',healthcare:'Healthcare',saas:'SaaS Platform',legacy:'Legacy ERP'}[key] || key;
+  renderSchemas();
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+addSchema('', 'Schema 1');
+</script>
+</body>
+</html>
