@@ -1102,7 +1102,7 @@ function buildPDF(r) {
     sf(...C.s2); doc.rect(ML, y, PW, 6.5, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 6.5, 'D');
     st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(t.name, ML + 2, y + 4.5);
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.name, ML + 57, y + 4.5); doc.text(String(t.columns.length), ML + 79, y + 4.5);
-    st(t.constraints.pk ? ...C.ok : ...C.cr); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 101, y + 4.5);
+    st(...(t.constraints.pk ? C.ok : C.cr)); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 101, y + 4.5);
     st(...wc); doc.text(wo.toUpperCase(), ML + 123 + 2, y + 4.5);
     y += 6.5;
   }));
@@ -1128,14 +1128,14 @@ function buildPDF(r) {
     const hasTyI = tf.some(f => f.title.includes('FLOAT') || f.title.includes('monetary'));
     const hasEI = tf.some(f => f.title.includes('UNIQUE') && f.title.includes('email'));
     checkY(7);
-    sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 6.5, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 6.5, 'D');
+    sf(...(ri % 2 === 0 ? C.s2 : C.s1)); doc.rect(ML, y, PW, 6.5, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 6.5, 'D');
     st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(t.name, ML + 2, y + 4.5);
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.name, ML + 52, y + 4.5);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
-    st(t.constraints.pk ? ...C.ok : ...C.cr); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 90, y + 4.5);
-    st(hasFkI ? ...C.me : ...C.ok); doc.text(hasFkI ? 'GAP' : 'OK', ML + 108, y + 4.5);
-    st(hasEI ? ...C.cr : ...C.ok); doc.text(hasEI ? 'MISS' : 'OK', ML + 132, y + 4.5);
-    st(hasTyI ? ...C.cr : ...C.ok); doc.text(hasTyI ? 'ISSUE' : 'OK', ML + 154, y + 4.5);
+    st(...(t.constraints.pk ? C.ok : C.cr)); doc.text(t.constraints.pk ? 'OK' : 'MISS', ML + 90, y + 4.5);
+    st(...(hasFkI ? C.me : C.ok)); doc.text(hasFkI ? 'GAP' : 'OK', ML + 108, y + 4.5);
+    st(...(hasEI ? C.cr : C.ok)); doc.text(hasEI ? 'MISS' : 'OK', ML + 132, y + 4.5);
+    st(...(hasTyI ? C.cr : C.ok)); doc.text(hasTyI ? 'ISSUE' : 'OK', ML + 154, y + 4.5);
     y += 6.5;
   }));
   y += 5;
@@ -1157,10 +1157,10 @@ function buildPDF(r) {
   [{ nf: '1NF', req: 'Atomic values; no repeating groups', kws: ['repeating', '1nf'] }, { nf: '2NF', req: 'No partial dependency on composite PK', kws: ['partial', '2nf'] }, { nf: '3NF', req: 'No transitive dependencies', kws: ['derived', 'transitive', 'computed'] }].forEach((nr, ri) => {
     const hasV = r.allF.some(f => nr.kws.some(kw => f.title.toLowerCase().includes(kw) || f.description.toLowerCase().includes(kw)));
     const vTbls = [...new Set(r.allF.filter(f => nr.kws.some(kw => f.title.toLowerCase().includes(kw) || f.description.toLowerCase().includes(kw))).map(f => f.table))].slice(0, 4).join(', ') || 'None';
-    sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
+    sf(...(ri % 2 === 0 ? C.s2 : C.s1)); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
     st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(nr.nf, ML + 2, y + 5);
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(nr.req, ML + 18, y + 5);
-    st(hasV ? ...C.cr : ...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(hasV ? 'VIOLATIONS' : 'PASS', ML + 83, y + 5);
+    st(...(hasV ? C.cr : C.ok)); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(hasV ? 'VIOLATIONS' : 'PASS', ML + 83, y + 5);
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(vTbls, ML + 105 + 2, y + 5);
     y += 7;
   });
@@ -1197,7 +1197,7 @@ function buildPDF(r) {
     y += 7;
     r.srs.forEach((sr, ri) => {
       const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; });
-      sf(ri % 2 === 0 ? ...C.s2 : ...C.s1); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
+      sf(...(ri % 2 === 0 ? C.s2 : C.s1)); doc.rect(ML, y, PW, 7, 'F'); sd(...C.bd); doc.setLineWidth(0.2); doc.rect(ML, y, PW, 7, 'D');
       st(...C.tx); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text(sr.name, ML + 2, y + 5);
       st(...C.t2); doc.setFont('helvetica', 'normal'); doc.text(sr.platform, ML + 44, y + 5);
       st(...scol(sr.score)); doc.setFont('helvetica', 'bold'); doc.text(sr.score + '%', ML + 64, y + 5);
