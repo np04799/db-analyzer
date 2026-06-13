@@ -957,14 +957,14 @@ function buildPDF(r) {
       sf(...C.dk); doc.rect(0, 0, W, 12, 'F');
       sf(...C.ac); doc.rect(0, 0, 1.5, 12, 'F');
       st(...C.t2); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      doc.text('DB SCHEMA ANALYSIS REPORT — v1.0', ML, 5.5);
+      doc.text('DB SCHEMA ANALYSIS REPORT - v1.0', ML, 5.5);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
-      doc.text(r.srs.map(s => s.name).join(' · '), ML, 10);
+      doc.text(r.srs.map(s => s.name).join(', '), ML, 10);
       doc.text('Page ' + pg, W - ML, 5.5, { align: 'right' });
       doc.text(now, W - ML, 10, { align: 'right' });
       sf(...C.s1); doc.rect(0, H - 7, W, 7, 'F');
       st(...C.t3); doc.setFontSize(6);
-      doc.text('Privacy First — No data stored or transmitted | All analysis performed locally in browser', ML, H - 2.5);
+      doc.text('Privacy First — No data stored or transmitted. All analysis runs locally.', ML, H - 2.5);
       doc.text(`Health Score: ${r.gScore}% | Grade: ${grade(r.gScore)}`, W - ML, H - 2.5, { align: 'right' });
       y = 18;
     }
@@ -1002,7 +1002,7 @@ function buildPDF(r) {
     const titleStr = (num ? num + '. ' : '') + (f.title || '');
     doc.text(doc.splitTextToSize(titleStr, PW - 55)[0], cx + 25, cy + 5.5);
     st(...C.t3); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
-    doc.text((f.schemaName ? f.schemaName + ' › ' : '') + (f.table || ''), cx + PW - 2, cy + 5.5, { align: 'right' });
+    doc.text((f.schemaName ? f.schemaName + ' > ' : '') + (f.table || ''), cx + PW - 2, cy + 5.5, { align: 'right' });
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
     doc.text(descL, cx + 4, cy + hh + 2.5);
     sf([18, 45, 25]); doc.roundedRect(cx + 2, cy + hh + dh + 1, PW - 4, fh, 1, 1, 'F');
@@ -1019,11 +1019,11 @@ function buildPDF(r) {
   st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.text('Schema Design Review', ML, 34);
   st([148, 163, 184]); doc.setFont('helvetica', 'normal'); doc.setFontSize(15); doc.text('& Best Practice Analysis', ML, 45);
   st([148, 163, 184]); doc.setFontSize(8.5);
-  doc.text('Schemas: ' + r.srs.map(s => s.name).join(' · '), ML, 57);
+  doc.text('Schemas: ' + r.srs.map(s => s.name).join(', '), ML, 57);
   doc.text('Generated: ' + now + '   |   Rule Engine v1.0   |   Schema Only', ML, 64);
   sf([22, 35, 55]); doc.roundedRect(ML, 69, 80, 6, 1, 1, 'F');
   st([163, 113, 247]); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
-  doc.text('🔒  Privacy First — No data stored or transmitted. All analysis runs locally.', ML + 3, 73);
+  doc.text('[SECURE] Privacy First — No data stored or transmitted. All analysis runs locally.', ML + 3, 73);
 
   y = 90;
   const kpis = [{ l: 'Health Score', v: r.gScore + '%', c: scol(r.gScore) }, { l: 'Tables', v: String(r.allT.length), c: C.ac }, { l: 'Issues', v: String(r.allF.length), c: C.hi }, { l: 'Critical', v: String(r.cnt.critical), c: C.cr }, { l: 'Domain', v: r.domain || 'General', c: C.pv }];
@@ -1213,7 +1213,7 @@ function buildPDF(r) {
   // ── S8 ISSUE REGISTER ────────────────────────────────────
   setPP(88, 'S8 — Issue register...');
   newPage(false);
-  secBanner(8, 'Issue Register — All ' + r.allF.length + ' Findings');
+  secBanner(8, 'Issue Register - All ' + r.allF.length + ' Findings');
   bodyTxt('Complete register ordered by severity. Each finding includes root cause and a concrete SQL remediation recommendation.');
   y += 3;
   const allSorted = [...r.allF].sort((a, b) => ({ critical: 0, high: 1, medium: 2, low: 3 }[a.severity] - { critical: 0, high: 1, medium: 2, low: 3 }[b.severity]));
@@ -1236,15 +1236,15 @@ function buildPDF(r) {
     sf([245, 248, 250]); doc.roundedRect(ML, y, PW, ih, 0, 0, 'F'); sd(...pc); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, ih, 0, 0, 'D');
     y += 3;
     if (p.items.length) { p.items.forEach(item => { st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); const lines = doc.splitTextToSize('→  ' + item, PW - 8); doc.text(lines, ML + 4, y + 3); y += lines.length * 4.2 + 2; }); }
-    else { st(...C.t3); doc.setFontSize(7.5); doc.text('No items in this phase ✓', ML + 4, y + 4); y += 8; }
+    else { st(...C.t3); doc.setFontSize(7.5); doc.text('No items in this phase - OK', ML + 4, y + 4); y += 8; }
     y += 5;
   });
 
   // ── APPENDIX ─────────────────────────────────────────────
   setPP(98, 'Appendix...');
   newPage(false);
-  secBanner('A', 'Appendix — Rule Engine Reference & v2 Preview');
-  subHdr('Rules Applied (v1.0 — 40+ rules)');
+  secBanner('A', 'Appendix - Rule Engine Reference & v2 Preview');
+  subHdr('Rules Applied (v1.0 - 40+ rules)');
   const rules = ['R01: Missing PRIMARY KEY', 'R02: Empty table definition', 'R03: Reserved word as table name', 'R04: Wide table (30+ columns)', 'R05: Missing created_at timestamp', 'R06: Missing updated_at timestamp', 'R07: ALLCAPS table name', 'R08: Mixed naming conventions', 'R09: Single-column table', 'R10: No soft-delete on user tables', 'R11: Missing FK index', 'R12: Reserved word as column name', 'R13: Cryptic column name (<3 chars)', 'R14: FLOAT for monetary columns', 'R15: Plaintext password risk', 'R16: Unprotected PII column (SSN/NIN)', 'R17: Payment card data column', 'R18: FK-looking column without FK constraint', 'R19: Missing UNIQUE on email column', 'R20: Repeating column groups (1NF violation)', 'R21: Derived/computed columns (3NF)', 'R22: NULL allowed on key columns', 'R23: Sensitive token column', 'R24: IP address stored as VARCHAR', 'R25: CHAR where VARCHAR preferred', 'R26: Isolated table (no relationships)', 'R27: Domain/schema mismatch', 'R28: Cross-schema FK gap detection', 'R41: SELECT * in queries', 'R42: UPDATE/DELETE without WHERE', 'R43: Implicit JOIN (comma syntax)'];
   const half = Math.ceil(rules.length / 2);
   rules.slice(0, half).forEach((rule, i) => { checkY(5); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(rule, ML, y + i * 0); });
