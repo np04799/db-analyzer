@@ -1005,8 +1005,8 @@ function buildPDF(r) {
     doc.text((f.schemaName ? f.schemaName + ' > ' : '') + (f.table || ''), cx + PW - 2, cy + 5.5, { align: 'right' });
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
     doc.text(descL, cx + 4, cy + hh + 2.5);
-    sf([18, 45, 25]); doc.roundedRect(cx + 2, cy + hh + dh + 1, PW - 4, fh, 1, 1, 'F');
-    st([120, 200, 130]); doc.setFont('courier', 'normal'); doc.setFontSize(7);
+    sf(18, 45, 25); doc.roundedRect(cx + 2, cy + hh + dh + 1, PW - 4, fh, 1, 1, 'F');
+    st(120, 200, 130); doc.setFont('courier', 'normal'); doc.setFontSize(7);
     doc.text(fixL, cx + 4, cy + hh + dh + 5);
     y += total + 4;
   }
@@ -1017,12 +1017,12 @@ function buildPDF(r) {
   sf(...C.ac); doc.rect(0, 0, 2, 82, 'F');
   st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('DATABASE SCHEMA ANALYSIS REPORT', ML, 20);
   st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.text('Schema Design Review', ML, 34);
-  st([148, 163, 184]); doc.setFont('helvetica', 'normal'); doc.setFontSize(15); doc.text('& Best Practice Analysis', ML, 45);
-  st([148, 163, 184]); doc.setFontSize(8.5);
+  st(148, 163, 184); doc.setFont('helvetica', 'normal'); doc.setFontSize(15); doc.text('& Best Practice Analysis', ML, 45);
+  st(148, 163, 184); doc.setFontSize(8.5);
   doc.text('Schemas: ' + r.srs.map(s => s.name).join(', '), ML, 57);
   doc.text('Generated: ' + now + '   |   Rule Engine v1.0   |   Schema Only', ML, 64);
-  sf([22, 35, 55]); doc.roundedRect(ML, 69, 80, 6, 1, 1, 'F');
-  st([163, 113, 247]); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+  sf(22, 35, 55); doc.roundedRect(ML, 69, 80, 6, 1, 1, 'F');
+  st(163, 113, 247); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
   doc.text('[SECURE] Privacy First — No data stored or transmitted. All analysis runs locally.', ML + 3, 73);
 
   y = 90;
@@ -1044,17 +1044,17 @@ function buildPDF(r) {
   secBanner(1, 'Business Context');
   if (r.overview) {
     bodyTxt(r.overview, PW);
-    if (r.domain) { y += 2; sf([20, 38, 75]); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('Domain Detected: ' + r.domain + ' — Findings weighted accordingly', ML + 4, y + 5); y += 11; }
+    if (r.domain) { y += 2; sf(20, 38, 75); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('Domain Detected: ' + r.domain + ' — Findings weighted accordingly', ML + 4, y + 5); y += 11; }
   } else { sf(...C.s2); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text('No business overview provided. General domain — neutral weighting applied.', ML + 4, y + 5); y += 11; }
   y += 3;
   subHdr('Schema Inventory');
   r.srs.forEach(sr => { sf(...C.s2); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F'); st(...C.ac); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(sr.name, ML + 4, y + 5); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(sr.platform + '  |  ' + sr.tables.length + ' tables  |  ' + sr.tables.reduce((s, t) => s + t.columns.length, 0) + ' columns  |  ' + sr.findings.length + ' findings  |  Score: ' + sr.score + '%', ML + 48, y + 5); y += 10; });
   y += 3;
-  sf([18, 42, 20]); doc.roundedRect(ML, y, PW, 9, 1, 1, 'F');
+  sf(18, 42, 20); doc.roundedRect(ML, y, PW, 9, 1, 1, 'F');
   st(...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('Analysis Scope — v1: Schema Only', ML + 4, y + 4.5);
   st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text('Includes: Table structure · Keys & constraints · Naming · Normalization (1NF–3NF) · Security posture · Relationships · Query patterns', ML + 4, y + 8.5);
   y += 13;
-  sf([40, 30, 12]); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F');
+  sf(40, 30, 12); doc.roundedRect(ML, y, PW, 7, 1, 1, 'F');
   st(...C.me); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.text('Not analyzed in v1 (coming in v2): Actual data profiling · Null rates · Cardinality · Query workload · Index usage statistics · DB connection', ML + 4, y + 5);
   y += 12;
 
@@ -1176,7 +1176,7 @@ function buildPDF(r) {
   const s6f = r.allF.filter(f => f.category === 'Query');
   secBanner(6, 'Query Analysis');
   if (!hasQ) {
-    sf([38, 32, 12]); doc.roundedRect(ML, y, PW, 13, 2, 2, 'F'); sd([90, 65, 20]); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, 13, 2, 2, 'D');
+    sf(38, 32, 12); doc.roundedRect(ML, y, PW, 13, 2, 2, 'F'); sd(90, 65, 20); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, 13, 2, 2, 'D');
     st(...C.me); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('Section Skipped — No Queries Submitted', ML + 5, y + 6);
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text('Add SQL queries in the Query Input fields and re-analyze to enable query pattern analysis.', ML + 5, y + 11);
     y += 18;
@@ -1233,7 +1233,7 @@ function buildPDF(r) {
     st(...C.wh); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Phase ' + p.phase + '  —  ' + p.title, ML + 4, y + 6.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(p.timeline, ML + PW - 3, y + 6.5, { align: 'right' });
     y += 9;
-    sf([245, 248, 250]); doc.roundedRect(ML, y, PW, ih, 0, 0, 'F'); sd(...pc); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, ih, 0, 0, 'D');
+    sf(245, 248, 250); doc.roundedRect(ML, y, PW, ih, 0, 0, 'F'); sd(...pc); doc.setLineWidth(0.4); doc.roundedRect(ML, y, PW, ih, 0, 0, 'D');
     y += 3;
     if (p.items.length) { p.items.forEach(item => { st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); const lines = doc.splitTextToSize('→  ' + item, PW - 8); doc.text(lines, ML + 4, y + 3); y += lines.length * 4.2 + 2; }); }
     else { st(...C.t3); doc.setFontSize(7.5); doc.text('No items in this phase - OK', ML + 4, y + 4); y += 8; }
@@ -1249,7 +1249,7 @@ function buildPDF(r) {
   const half = Math.ceil(rules.length / 2);
   rules.slice(0, half).forEach((rule, i) => { checkY(5); st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(rule, ML, y + i * 0); });
   y += half * 4.5 + 3;
-  sf([18, 42, 20]); doc.roundedRect(ML, y, PW, 34, 2, 2, 'F');
+  sf(18, 42, 20); doc.roundedRect(ML, y, PW, 34, 2, 2, 'F');
   st(...C.ok); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Coming in v2 — Data Analysis & Enterprise Features', ML + 4, y + 7);
   st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
   ['• Data Profiling: Null rates, cardinality, value distribution, dead column detection', '• Direct DB Connection: Auto-extract schema from PostgreSQL, MySQL, SQL Server', '• Query Workload: Slow query log analysis, actual index usage, N+1 detection', '• Schema History: Track health score over time, before/after comparison reports', '• Team Features: Assign findings to engineers, Jira/Linear integration, fix tracking', '• Auth & Login: User accounts, project management, role-based access'].forEach((item, i) => { doc.text(item, ML + 4, y + 13 + i * 5); });
