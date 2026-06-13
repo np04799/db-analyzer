@@ -625,15 +625,54 @@ function readFile(file, id, field) {
 // ═══════════════════════════════════════════════════
 const RW = new Set(['select','from','where','table','index','order','group','by','key','value','type','date','time','timestamp','name','data','status','user','users','session','column','schema','database','primary','unique','foreign','check','default','null','not','and','or','in','like','join','left','right','inner','outer','on','as','distinct','count','sum','max','min','avg','insert','update','delete','drop','create','alter','constraint']);
 
+// Extract balanced paren body for CREATE TABLE
+function extractTableBody(ddl) {
+  const results = [];
+  const upper = ddl.toUpperCase();
+  let i = 0;
+  while (i < ddl.length) {
+    const m = upper.indexOf('CREATE TABLE', i);
+    if (m === -1) break;
+    // Find table name
+    const afterKw = ddl.slice(m + 12).trimStart();
+    const ifne = afterKw.toUpperCase().startsWith('IF NOT EXISTS') ? afterKw.slice(13).trimStart() : afterKw;
+    const nameM = ifne.match(/^[`"[]?(\w+)[`"\]]?/);
+    if (!nameM) { i = m + 12; continue; }
+    const tn = nameM[1];
+    // Find opening paren
+    const openP = ddl.indexOf('(', m + 12 + (afterKw.length - ifne.length) + nameM[0].length);
+    if (openP === -1) { i = m + 12; continue; }
+    // Walk balanced parens
+    let depth = 0, j = openP, body = '';
+    for (; j < ddl.length; j++) {
+      if (ddl[j] === '(') depth++;
+      else if (ddl[j] === ')') { depth--; if (depth === 0) break; }
+    }
+    body = ddl.slice(openP + 1, j);
+    results.push({ tn, body });
+    i = j + 1;
+  }
+  return results;
+}
+
 function parseDDL(ddl) {
   const tables = [];
   if (!ddl || !ddl.trim()) return tables;
-  const rx = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"[]?(\w+)[`"\]]?\s*\(([^;]*?)\)\s*;?/gis;
-  let m;
-  while ((m = rx.exec(ddl)) !== null) {
-    const tn = m[1], body = m[2];
+  const extracted = extractTableBody(ddl);
+  for (const { tn, body } of extracted) {
     const cols = [], con = { pk: false, fks: [], uniques: [] };
-    for (const line of body.split('\n').map(l => l.trim()).filter(Boolean)) {
+    // Split lines but preserve inline parens (e.g. REFERENCES tbl(id), DEFAULT func())
+    const lines = [];
+    let cur = '', depth = 0;
+    for (const ch of body) {
+      if (ch === '(') { depth++; cur += ch; }
+      else if (ch === ')') { depth--; cur += ch; }
+      else if (ch === '\n' && depth === 0) { lines.push(cur.trim()); cur = ''; }
+      else if (ch === ',' && depth === 0) { lines.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    if (cur.trim()) lines.push(cur.trim());
+    for (const line of lines.filter(Boolean)) {
       const ul = line.toUpperCase();
       if (ul.startsWith('PRIMARY KEY')) { con.pk = true; continue; }
       if (ul.startsWith('FOREIGN KEY')) { const f = line.match(/FOREIGN\s+KEY\s*\(([^)]+)\)\s*REFERENCES\s+(\w+)/i); if (f) con.fks.push({ col: f[1].trim(), ref: f[2] }); continue; }
@@ -645,11 +684,27 @@ function parseDDL(ddl) {
         continue;
       }
       if (ul.match(/^(INDEX|KEY |CONSTRAINT)\s/)) continue;
-      const cm = line.match(/^[`"[]?(\w+)[`"\]]?\s+(\w+(?:\s*\([^)]*\))?)(.*)/i);
+      // Strip nested parens content for type detection but keep full line for REFERENCES check
+      const lineNP = line.replace(/\([^)]*\)/g, '()');
+      const cm = lineNP.match(/^[`"[]?(\w+)[`"\]]?\s+(\w+(?:\s*\(\))?)(.*)/i);
       if (!cm) continue;
-      const cn = cm[1], ct = cm[2].toUpperCase(), rest = cm[3].toUpperCase();
-      const col = { name: cn, type: ct, nullable: !rest.includes('NOT NULL'), hasPK: rest.includes('PRIMARY KEY') || ul.includes('PRIMARY KEY'), hasUnique: rest.includes('UNIQUE'), hasDefault: rest.includes('DEFAULT'), autoInc: rest.includes('AUTO_INCREMENT') || rest.includes('AUTOINCREMENT') || ct.includes('SERIAL') || ct.includes('IDENTITY') };
+      const cn = cm[1];
+      // Get real type from original line
+      const typeM = line.match(/^[`"[]?\w+[`"\]]?\s+(\w+)/i);
+      const ct = typeM ? typeM[1].toUpperCase() : cm[2].toUpperCase();
+      const rest = line.toUpperCase();
+      const col = {
+        name: cn, type: ct,
+        nullable: !rest.includes('NOT NULL'),
+        hasPK: rest.includes('PRIMARY KEY'),
+        hasUnique: rest.includes('UNIQUE'),
+        hasDefault: rest.includes('DEFAULT'),
+        autoInc: rest.includes('AUTO_INCREMENT') || rest.includes('AUTOINCREMENT') || ['SERIAL','BIGSERIAL','SMALLSERIAL'].some(s => ct.includes(s)) || rest.includes('IDENTITY')
+      };
       if (col.hasPK) con.pk = true;
+      // Detect inline REFERENCES: col_name TYPE REFERENCES other_table(col)
+      const refM = line.match(/REFERENCES\s+(\w+)\s*\((\w+)\)/i);
+      if (refM) con.fks.push({ col: cn, ref: refM[1] });
       cols.push(col);
     }
     tables.push({ name: tn, columns: cols, constraints: con });
