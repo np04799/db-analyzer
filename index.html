@@ -19,7 +19,7 @@
   --ok:#3FB950;--pv:#A371F7;
   --r:8px;--rl:12px;--tr:.18s ease
 }
-html{font-size:14px}
+html{font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
@@ -35,7 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .prv{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(163,113,247,.08);color:var(--pv);border:1px solid rgba(163,113,247,.2);font-size:10px;font-weight:600}
 
 /* LAYOUT */
-.lay{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 50px)}
+.lay{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 50px)}
 
 /* NAV */
 .nav{background:var(--s1);border-right:1px solid var(--b);padding:18px 13px;position:sticky;top:50px;height:calc(100vh - 50px);overflow-y:auto;display:flex;flex-direction:column;gap:3px}
@@ -50,7 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ntip strong{color:var(--t2)}
 
 /* MAIN */
-.mn{padding:24px 28px;max-width:900px}
+.mn{padding:20px 24px;max-width:860px;width:100%}
 
 /* FORM SECTIONS */
 .fs{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;transition:border-color var(--tr)}
@@ -71,7 +71,7 @@ textarea,input[type=text]{width:100%;padding:9px 11px;background:var(--s2);borde
 textarea{font-family:'Cascadia Code','Fira Code',monospace;font-size:11.5px;line-height:1.6}
 textarea:focus,input[type=text]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,140,255,.1)}
 textarea::placeholder,input::placeholder{color:var(--t3)}
-.ilbl{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.ilbl{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .ilbl .op{color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0}
 
 /* SCHEMA CARD */
@@ -266,6 +266,21 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .ppf{height:100%;background:var(--cr);border-radius:2px;transition:width .3s ease}
 
 @media(max-width:700px){.lay{grid-template-columns:1fr}.nav{display:none}.mn{padding:14px}}
+
+/* FOOTER */
+.ft{background:var(--s1);border-top:1px solid var(--b);padding:28px 32px;margin-top:auto}
+.ft-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
+.ft-brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:8px}
+.ft-brand svg{color:var(--ac)}
+.ft-desc{font-size:12px;color:var(--t2);line-height:1.7;max-width:280px}
+.ft-col h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:10px}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.ft-col ul li{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px}
+.ft-col ul li::before{content:'→';color:var(--ac);font-size:10px;flex-shrink:0}
+.ft-bottom{max-width:1100px;margin:16px auto 0;padding-top:14px;border-top:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ft-bottom p{font-size:11px;color:var(--t3)}
+.ft-badge{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);color:var(--ok);font-size:10px;font-weight:600}
+@media(max-width:700px){.ft-inner{grid-template-columns:1fr}.ft{padding:20px 16px}}
 </style>
 </head>
 <body>
@@ -290,23 +305,18 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 <div class="lay">
   <!-- NAV -->
   <nav class="nav">
-    <div class="nl">Input</div>
+    <div class="nl">Steps</div>
     <div class="ni act" onclick="goto('s1')"><span class="nsn">1</span>Business Overview</div>
     <div class="ni" onclick="goto('s2')"><span class="nsn">2</span>Schemas &amp; Queries</div>
-    <div class="ni" onclick="goto('s3')"><span class="nsn">3</span>Analysis Options</div>
+    <div class="ni" onclick="goto('s3')"><span class="nsn">3</span>Analyze</div>
     <div class="ndv"></div>
-    <div class="nl">Report Sections</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S1</span>Business Context</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S2</span>Executive Summary</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S3</span>Schema &amp; Architecture</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S4</span>Keys &amp; Integrity</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S5</span>Normalization</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S6</span>Query Analysis</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S7</span>Comparison</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S8</span>Issue Register</div>
-    <div class="ni" onclick="goto('res')"><span class="nsn" style="font-size:8px">S9</span>Roadmap</div>
+    <div class="nl">How it works</div>
+    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(45,140,255,.15);color:var(--ac);border-color:rgba(45,140,255,.2)">①</span>Paste DDL or upload .sql</div>
+    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(63,185,80,.15);color:var(--ok);border-color:rgba(63,185,80,.2)">②</span>40+ rules run locally</div>
+    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(163,113,247,.15);color:var(--pv);border-color:rgba(163,113,247,.2)">③</span>Get scored report + fixes</div>
+    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(240,136,62,.15);color:var(--hi);border-color:rgba(240,136,62,.2)">④</span>Export full PDF report</div>
     <div class="ndv"></div>
-    <div class="ntip"><strong>All analysis runs in your browser.</strong><br>No schema data is ever sent to any server.</div>
+    <div class="ntip"><strong>All analysis runs in your browser.</strong><br>No schema data is ever sent to any server. Works fully offline.</div>
   </nav>
 
   <!-- MAIN -->
@@ -1079,6 +1089,146 @@ function solFilter(f, btn) {
   document.getElementById('solCards').innerHTML = window._solRenderCards(f);
 }
 
+// ─── SCHEMA INSIGHT ENGINE ────────────────────────────────────────────────
+function generateSchemaInsight(r) {
+  const srs = r.srs;
+  const allTables = r.allT;
+  const domain = r.domain || 'General';
+  const findings = r.allF;
+  
+  const insights = [];
+  
+  // ── A. Single schema assessment ─────────────────────────────────────────
+  if (srs.length === 1) {
+    const sr = srs[0];
+    const tableCount = sr.tables.length;
+    const cols = sr.tables.reduce((s,t)=>s+t.columns.length,0);
+    
+    // Check for domain mixing signals — tables that suggest multiple concerns
+    const domainGroups = {
+      auth:    ['users','user','accounts','account','sessions','roles','permissions','auth'],
+      billing: ['invoices','invoice','payments','payment','subscriptions','billing','charges','refunds'],
+      content: ['products','product','catalog','articles','posts','content','media','files'],
+      ops:     ['orders','order','shipments','shipping','inventory','stock','warehouse'],
+      audit:   ['logs','audit','events','activity','history','changelog'],
+      tenant:  ['tenants','tenant','organizations','workspaces','teams'],
+    };
+    
+    const matched = {};
+    for (const [grp, kws] of Object.entries(domainGroups)) {
+      const hits = sr.tables.filter(t => kws.some(k => t.name.toLowerCase().includes(k)));
+      if (hits.length) matched[grp] = hits.map(t=>t.name);
+    }
+    const matchedGroups = Object.keys(matched);
+    
+    if (tableCount === 0) {
+      insights.push({ type:'warn', title:'No tables parsed', body:'No CREATE TABLE statements were detected. Check that your DDL is valid SQL and try again.' });
+    } else if (tableCount === 1) {
+      insights.push({ type:'info', title:'Single table submitted', body:'Only one table was analyzed. For a meaningful design review, submit the complete schema with all related tables. Relationships, FK integrity, and normalization checks work best with the full picture.' });
+    } else if (matchedGroups.length >= 3) {
+      insights.push({ type:'suggest', title:`Consider splitting into ${matchedGroups.length} focused schemas`, body:`This schema covers ${matchedGroups.length} distinct concern areas: <strong>${matchedGroups.join(', ')}</strong>. Large monolithic schemas are harder to maintain and scale. Consider separating by domain — e.g. one schema per microservice or bounded context.`, detail: Object.entries(matched).map(([g,ts])=>`<strong>${g}:</strong> ${ts.join(', ')}`).join(' &nbsp;·&nbsp; ') });
+    } else if (tableCount >= 15) {
+      insights.push({ type:'suggest', title:'Wide schema — consider partitioning', body:`${tableCount} tables in one schema can become hard to maintain. Review whether groups of tables represent separate bounded contexts that could live in their own schema.` });
+    } else {
+      insights.push({ type:'good', title:'Schema scope looks appropriate', body:`${tableCount} tables covering ${matchedGroups.length > 0 ? matchedGroups.join(', ') : 'a focused domain'}. The scope is reasonable for a single schema. Continue adding tables as your domain grows.` });
+    }
+    
+    // Future schema recommendation
+    const needsBilling = matchedGroups.includes('billing') || domain === 'Finance';
+    const needsAudit = !matchedGroups.includes('audit') && tableCount > 5;
+    const needsTenant = domain === 'SaaS' && !matchedGroups.includes('tenant');
+    
+    const futureNeeds = [];
+    if (needsBilling && !matchedGroups.includes('billing')) futureNeeds.push('billing / payments schema');
+    if (needsAudit) futureNeeds.push('audit / event log schema (append-only)');
+    if (needsTenant) futureNeeds.push('tenant / organization schema for multi-tenancy');
+    if (domain === 'Healthcare') futureNeeds.push('HIPAA audit trail schema');
+    
+    if (futureNeeds.length) {
+      insights.push({ type:'future', title:'Schemas you may need in future', body:`Based on your domain (<strong>${domain}</strong>), consider adding: ${futureNeeds.map(f=>`<em>${f}</em>`).join(', ')}.` });
+    }
+  }
+  
+  // ── B. Multi-schema assessment ───────────────────────────────────────────
+  if (srs.length > 1) {
+    const scores = srs.map(s=>s.score);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
+    const weakest = srs.find(s=>s.score===minScore);
+    const strongest = srs.find(s=>s.score===maxScore);
+    
+    // Score gap
+    if (maxScore - minScore >= 25) {
+      insights.push({ type:'warn', title:`Large quality gap between schemas (${maxScore - minScore} pts)`, body:`<strong>${strongest.name}</strong> scores ${strongest.score}% while <strong>${weakest.name}</strong> scores ${weakest.score}%. Address critical issues in <strong>${weakest.name}</strong> before integrating schemas — cross-schema integrity is only as strong as the weakest link.` });
+    } else {
+      insights.push({ type:'good', title:'Consistent quality across schemas', body:`Score range: ${minScore}%–${maxScore}%. All schemas are at a comparable quality level, which is important for reliable cross-schema joins and data integrity.` });
+    }
+    
+    // Check for overlap / potential merge candidates
+    const allTableNames = srs.flatMap(s=>s.tables.map(t=>t.name.toLowerCase()));
+    const dupes = allTableNames.filter((n,i)=>allTableNames.indexOf(n)!==i);
+    if (dupes.length) {
+      insights.push({ type:'warn', title:`Duplicate table names across schemas: ${dupes.join(', ')}`, body:'Tables with the same name in multiple schemas create ambiguity in cross-schema queries and ORM mappings. Rename or consolidate.' });
+    }
+    
+    // Check if schemas are too small to justify separation
+    const tinySchemas = srs.filter(s=>s.tables.length <= 1);
+    if (tinySchemas.length) {
+      insights.push({ type:'suggest', title:`${tinySchemas.map(s=>s.name).join(', ')} may not need a separate schema`, body:`Schema${tinySchemas.length>1?'s':''} with only 1 table rarely justify separate schema boundaries. Consider merging into an adjacent schema unless there is a strong isolation or team ownership reason.` });
+    }
+    
+    // Are schemas necessary? (do they have cross-references?)
+    const allFkRefs = srs.flatMap(s=>s.tables.flatMap(t=>t.constraints.fks.map(f=>f.ref.toLowerCase())));
+    const crossRefs = srs.some(s=>s.tables.some(t=>allFkRefs.includes(t.name.toLowerCase()) && !s.tables.some(ot=>ot.name.toLowerCase()===allFkRefs.find(r=>r===t.name.toLowerCase()))));
+    if (crossRefs) {
+      insights.push({ type:'info', title:'Cross-schema FK dependencies detected', body:'Tables in one schema reference tables in another. Ensure your DB supports cross-schema FKs (PostgreSQL: yes; MySQL: partial; SQLite: no). Document these dependencies explicitly.' });
+    }
+    
+    // Future schema recommendation
+    const allNames = srs.flatMap(s=>s.tables.map(t=>t.name.toLowerCase()));
+    const missingAudit = !allNames.some(n=>['log','audit','event','history'].some(k=>n.includes(k)));
+    if (missingAudit && allTableNames.length > 6) {
+      insights.push({ type:'future', title:'Consider an audit schema', body:'With multiple schemas in place, an append-only audit log schema is strongly recommended for traceability, compliance, and debugging across service boundaries.' });
+    }
+  }
+  
+  return insights;
+}
+
+function renderSchemaInsight(r) {
+  const insights = generateSchemaInsight(r);
+  if (!insights.length) return '';
+  
+  const typeMap = {
+    good:    { icon:'✅', color:'var(--ok)',  bg:'rgba(63,185,80,.08)',  bd:'rgba(63,185,80,.2)'  },
+    info:    { icon:'ℹ️', color:'var(--ac)',  bg:'rgba(45,140,255,.08)', bd:'rgba(45,140,255,.2)' },
+    warn:    { icon:'⚠️', color:'var(--hi)',  bg:'rgba(240,136,62,.08)', bd:'rgba(240,136,62,.2)' },
+    suggest: { icon:'💡', color:'var(--me)',  bg:'rgba(210,153,34,.08)', bd:'rgba(210,153,34,.2)' },
+    future:  { icon:'🔮', color:'var(--pv)',  bg:'rgba(163,113,247,.08)','bd':'rgba(163,113,247,.2)' },
+  };
+  
+  const cards = insights.map(ins => {
+    const t = typeMap[ins.type] || typeMap.info;
+    return `<div style="border:1px solid ${t.bd};background:${t.bg};border-radius:var(--r);padding:12px 14px;margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span style="font-size:15px">${t.icon}</span>
+        <strong style="font-size:13px;color:var(--tx)">${esc(ins.title)}</strong>
+      </div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6">${ins.body}</div>
+      ${ins.detail ? `<div style="font-size:11px;color:var(--t3);margin-top:6px;padding-top:6px;border-top:1px solid ${t.bd}">${ins.detail}</div>` : ''}
+    </div>`;
+  }).join('');
+  
+  return `<div class="rs ex" style="margin-bottom:10px">
+    <div class="rsh2" onclick="this.parentElement.classList.toggle('ex')">
+      <span class="ri">🧠</span>
+      <span class="rt">Schema Intelligence — Design Recommendations</span>
+      <span class="rc">▶</span>
+    </div>
+    <div class="rbd">${cards}</div>
+  </div>`;
+}
+
 function renderAll(r) {
   // Score strip
   const scoreHintHTML = `<div class="score-hint-wrap"><i class="score-hint-icon">ⓘ<div class="score-hint-pop"><div class="score-hint-arrow"></div><h4>How the Health Score is calculated</h4><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span><strong>Base:</strong> 100 minus penalties per issue</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span>Critical = −15 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--hi)"></div><span>High = −8 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--me)"></div><span>Medium = −4 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--lo)"></div><span>Low = −1 pt each</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:10px;color:var(--t3)"><strong style="color:var(--t2)">Section weights:</strong> Keys &amp; Integrity 25% · Normalization 20% · Schema 20% · Security 15% · Indexing 10% · Relationships 10%<br><br><strong style="color:var(--t2)">Grades:</strong> A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60</div></div></i></div>`;
@@ -1114,7 +1264,8 @@ function renderAll(r) {
   const dimRows = Object.entries(r.gSecs).map(([k, v]) => `<div class="dr"><div class="dl">${k}</div><div class="dbar"><div class="df" style="width:${v.score}%;background:${DC[k] || 'var(--ac)'}"></div></div><div class="dsc" style="color:${DC[k] || 'var(--ac)'}">${v.score}%</div></div>`).join('');
   const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📋</span><span class="rt">S1 — Business Context</span><span class="rc">▶</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
   const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
-  document.getElementById('sumC').innerHTML = `${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div><span class="rc">▶</span></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span><span class="rc">▶</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
+  const insightHTML = renderSchemaInsight(r);
+  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div><span class="rc">▶</span></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span><span class="rc">▶</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
   document.getElementById('sumC').querySelectorAll('.rsh2').forEach(h => h.onclick = () => h.parentElement.classList.toggle('ex'));
 
   // Comparison tab
@@ -1507,5 +1658,47 @@ function loadSample(key) {
 // ═══════════════════════════════════════════════════
 addSchema('', 'Schema 1');
 </script>
+
+<!-- FOOTER -->
+<footer class="ft">
+  <div class="ft-inner">
+    <div>
+      <div class="ft-brand">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        DB Schema Analyzer
+      </div>
+      <p class="ft-desc">A free, privacy-first database design review tool. Paste your DDL and get an instant scored report with actionable fixes — no account, no uploads, no data leaves your browser.</p>
+    </div>
+    <div class="ft-col">
+      <h4>What It Analyzes</h4>
+      <ul>
+        <li>Primary keys &amp; foreign key integrity</li>
+        <li>Normalization (1NF · 2NF · 3NF)</li>
+        <li>Security posture &amp; PII exposure</li>
+        <li>Naming conventions &amp; reserved words</li>
+        <li>Missing indexes on FK columns</li>
+        <li>Query anti-patterns (SELECT *, no WHERE)</li>
+      </ul>
+    </div>
+    <div class="ft-col">
+      <h4>Supported Platforms</h4>
+      <ul>
+        <li>PostgreSQL</li>
+        <li>MySQL &amp; MariaDB</li>
+        <li>Microsoft SQL Server</li>
+        <li>Oracle Database</li>
+        <li>SQLite</li>
+        <li>Generic SQL (ANSI)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="ft-bottom">
+    <p>DB Schema Analyzer v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted</p>
+    <div class="ft-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Privacy First
+    </div>
+  </div>
+</footer>
 </body>
 </html>
