@@ -35,7 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .prv{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(163,113,247,.08);color:var(--pv);border:1px solid rgba(163,113,247,.2);font-size:10px;font-weight:600}
 
 /* LAYOUT */
-.lay{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 50px)}
+.lay{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 50px);max-width:1440px;margin:0 auto}
 
 /* NAV */
 .nav{background:var(--s1);border-right:1px solid var(--b);padding:18px 13px;position:sticky;top:50px;height:calc(100vh - 50px);overflow-y:auto;display:flex;flex-direction:column;gap:3px}
@@ -50,7 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ntip strong{color:var(--t2)}
 
 /* MAIN */
-.mn{padding:20px 24px;max-width:860px;width:100%}
+.mn{padding:20px 28px;width:100%;box-sizing:border-box}
 
 /* FORM SECTIONS */
 .fs{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;transition:border-color var(--tr)}
