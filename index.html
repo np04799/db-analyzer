@@ -23,8 +23,18 @@ html{font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
+/* OVERVIEW STRIP */
+.ovw{background:linear-gradient(135deg,var(--s2) 0%,var(--s1) 100%);border-bottom:1px solid var(--b);padding:22px 32px}
+.ovw-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.ovw-icon{width:44px;height:44px;border-radius:12px;background:var(--acbg);border:1px solid rgba(45,140,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ovw-text h2{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.ovw-text p{font-size:13px;color:var(--t2);line-height:1.6;max-width:900px}
+.ovw-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.ovw-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+
 /* HOW IT WORKS BANNER */
-.hiw{background:var(--s1);border-bottom:1px solid var(--b);padding:10px 24px}
+.hiw{background:var(--s1);border-bottom:1px solid var(--b);padding:14px 32px}
+.hiw-heading{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px}
 .hiw-inner{display:flex;align-items:center;justify-content:center;gap:0;max-width:1440px;margin:0 auto}
 .hiw-step{display:flex;align-items:center;gap:9px;padding:7px 14px;flex-shrink:0}
 .hiw-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
@@ -311,8 +321,44 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
   </div>
 </header>
 
+<!-- OVERVIEW STRIP -->
+<div class="ovw">
+  <div class="ovw-inner">
+    <div class="ovw-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    </div>
+    <div class="ovw-text">
+      <h2>What is DB Schema Analyzer?</h2>
+      <p>A free, privacy-first tool that reviews your database schema design instantly — right in the browser. Paste your <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--ac)">CREATE TABLE</code> statements and get a scored report covering integrity, security, normalization, naming, relationships, and query patterns — with specific SQL fixes for every issue found.</p>
+      <div class="ovw-badges">
+        <span class="ovw-badge" style="background:rgba(45,140,255,.08);color:var(--ac);border-color:rgba(45,140,255,.2)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          No data leaves your browser
+        </span>
+        <span class="ovw-badge" style="background:rgba(63,185,80,.08);color:var(--ok);border-color:rgba(63,185,80,.2)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          40+ rule checks
+        </span>
+        <span class="ovw-badge" style="background:rgba(163,113,247,.08);color:var(--pv);border-color:rgba(163,113,247,.2)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          No account needed
+        </span>
+        <span class="ovw-badge" style="background:rgba(210,153,34,.08);color:var(--me);border-color:rgba(210,153,34,.2)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Works offline
+        </span>
+        <span class="ovw-badge" style="background:rgba(248,81,73,.08);color:var(--cr);border-color:rgba(248,81,73,.2)">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          PDF report export
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- HOW IT WORKS BANNER -->
 <div class="hiw">
+  <div class="hiw-heading">How It Works</div>
   <div class="hiw-inner">
     <div class="hiw-step">
       <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
@@ -1700,7 +1746,8 @@ addSchema('', 'Schema 1');
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
         DB Schema Analyzer
       </div>
-      <p class="ft-desc">A free, privacy-first database design review tool. Paste your DDL and get an instant scored report with actionable fixes — no account, no uploads, no data leaves your browser.</p>
+      <p class="ft-desc" style="margin-top:6px">Free · Privacy-first · No account required · Works offline</p>
+      <p class="ft-desc" style="margin-top:4px;font-size:11px;color:var(--t3)">v1.0 — Rule Engine · Schema Only · Client-side analysis</p>
     </div>
     <div class="ft-col">
       <h4>What It Analyzes</h4>
