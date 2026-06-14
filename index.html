@@ -25,11 +25,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 /* OVERVIEW STRIP */
 .ovw{background:linear-gradient(135deg,var(--s2) 0%,var(--s1) 100%);border-bottom:1px solid var(--b);padding:22px 32px}
-.ovw-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.ovw-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
 .ovw-icon{width:44px;height:44px;border-radius:12px;background:var(--acbg);border:1px solid rgba(45,140,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ovw-text h2{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
-.ovw-text p{font-size:13px;color:var(--t2);line-height:1.6;max-width:900px}
-.ovw-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.ovw-text{text-align:center}.ovw-text h2{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.ovw-text p{font-size:13px;color:var(--t2);line-height:1.6;max-width:680px;text-align:center}
+.ovw-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .ovw-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
 
 /* HOW IT WORKS BANNER */
@@ -352,37 +352,6 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
           PDF report export
         </span>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- HOW IT WORKS BANNER -->
-<div class="hiw">
-  <div class="hiw-heading">How It Works</div>
-  <div class="hiw-inner">
-    <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
-      <span class="hiw-txt">Describe your system &amp; pick platform</span>
-    </div>
-    <span class="hiw-arr">→</span>
-    <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(163,113,247,.15);color:var(--pv)">②</div>
-      <span class="hiw-txt">Paste DDL or upload .sql file</span>
-    </div>
-    <span class="hiw-arr">→</span>
-    <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(63,185,80,.15);color:var(--ok)">③</div>
-      <span class="hiw-txt">40+ rules run locally in browser</span>
-    </div>
-    <span class="hiw-arr">→</span>
-    <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(210,153,34,.15);color:var(--me)">④</div>
-      <span class="hiw-txt">Get scored report with fixes</span>
-    </div>
-    <span class="hiw-arr">→</span>
-    <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(248,81,73,.15);color:var(--cr)">⑤</div>
-      <span class="hiw-txt">Export full PDF report</span>
     </div>
   </div>
 </div>
@@ -1737,6 +1706,38 @@ function loadSample(key) {
 // ═══════════════════════════════════════════════════
 addSchema('', 'Schema 1');
 </script>
+
+
+<!-- HOW IT WORKS BANNER -->
+<div class="hiw">
+  <div class="hiw-heading">How It Works</div>
+  <div class="hiw-inner">
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
+      <span class="hiw-txt">Describe your system &amp; pick platform</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(163,113,247,.15);color:var(--pv)">②</div>
+      <span class="hiw-txt">Paste DDL or upload .sql file</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(63,185,80,.15);color:var(--ok)">③</div>
+      <span class="hiw-txt">40+ rules run locally in browser</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(210,153,34,.15);color:var(--me)">④</div>
+      <span class="hiw-txt">Get scored report with fixes</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(248,81,73,.15);color:var(--cr)">⑤</div>
+      <span class="hiw-txt">Export full PDF report</span>
+    </div>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer class="ft">
