@@ -23,6 +23,15 @@ html{font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
+/* HOW IT WORKS BANNER */
+.hiw{background:var(--s1);border-bottom:1px solid var(--b);padding:10px 24px}
+.hiw-inner{display:flex;align-items:center;justify-content:center;gap:0;max-width:1440px;margin:0 auto}
+.hiw-step{display:flex;align-items:center;gap:9px;padding:7px 14px;flex-shrink:0}
+.hiw-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.hiw-txt{font-size:12px;font-weight:500;color:var(--t2);white-space:nowrap}
+.hiw-arr{color:var(--b2);font-size:16px;flex-shrink:0;padding:0 2px}
+@media(max-width:700px){.hiw{display:none}}
+
 /* HEADER */
 .hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 20px;gap:10px}
 .hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);text-decoration:none}
@@ -302,6 +311,36 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
   </div>
 </header>
 
+<!-- HOW IT WORKS BANNER -->
+<div class="hiw">
+  <div class="hiw-inner">
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
+      <span class="hiw-txt">Describe your system &amp; pick platform</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(163,113,247,.15);color:var(--pv)">②</div>
+      <span class="hiw-txt">Paste DDL or upload .sql file</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(63,185,80,.15);color:var(--ok)">③</div>
+      <span class="hiw-txt">40+ rules run locally in browser</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(210,153,34,.15);color:var(--me)">④</div>
+      <span class="hiw-txt">Get scored report with fixes</span>
+    </div>
+    <span class="hiw-arr">→</span>
+    <div class="hiw-step">
+      <div class="hiw-num" style="background:rgba(248,81,73,.15);color:var(--cr)">⑤</div>
+      <span class="hiw-txt">Export full PDF report</span>
+    </div>
+  </div>
+</div>
+
 <div class="lay">
   <!-- NAV -->
   <nav class="nav">
@@ -309,12 +348,6 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
     <div class="ni act" onclick="goto('s1')"><span class="nsn">1</span>Business Overview</div>
     <div class="ni" onclick="goto('s2')"><span class="nsn">2</span>Schemas &amp; Queries</div>
     <div class="ni" onclick="goto('s3')"><span class="nsn">3</span>Analyze</div>
-    <div class="ndv"></div>
-    <div class="nl">How it works</div>
-    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(45,140,255,.15);color:var(--ac);border-color:rgba(45,140,255,.2)">①</span>Paste DDL or upload .sql</div>
-    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(63,185,80,.15);color:var(--ok);border-color:rgba(63,185,80,.2)">②</span>40+ rules run locally</div>
-    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(163,113,247,.15);color:var(--pv);border-color:rgba(163,113,247,.2)">③</span>Get scored report + fixes</div>
-    <div class="ni" style="cursor:default;opacity:.75"><span class="nsn" style="background:rgba(240,136,62,.15);color:var(--hi);border-color:rgba(240,136,62,.2)">④</span>Export full PDF report</div>
     <div class="ndv"></div>
     <div class="ntip"><strong>All analysis runs in your browser.</strong><br>No schema data is ever sent to any server. Works fully offline.</div>
   </nav>
