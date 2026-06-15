@@ -68,10 +68,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .prv{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:rgba(163,113,247,.08);color:var(--pv);border:1px solid rgba(163,113,247,.2);font-size:10px;font-weight:600}
 
 /* LAYOUT */
-.lay{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 50px);max-width:1440px;margin:0 auto}
+.lay{display:grid;grid-template-columns:1fr;min-height:calc(100vh - 50px);max-width:1440px;margin:0 auto}
 
 /* NAV */
-.nav{background:var(--s1);border-right:1px solid var(--b);padding:18px 13px;position:sticky;top:50px;height:calc(100vh - 50px);overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.nav{display:none}
 .nl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:6px 8px 3px}
 .ni{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;color:var(--t2);font-size:12px;transition:all var(--tr);user-select:none}
 .ni:hover{background:var(--s2);color:var(--tx);border-color:var(--b)}
@@ -83,7 +83,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ntip strong{color:var(--t2)}
 
 /* MAIN */
-.mn{padding:20px 28px;width:100%;box-sizing:border-box}
+.mn{padding:20px 40px;width:100%;box-sizing:border-box;max-width:1100px;margin:0 auto}
 
 /* FORM SECTIONS */
 .fs{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;transition:border-color var(--tr)}
@@ -347,9 +347,6 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 
     <!-- CENTER: What is it + horizontal steps below -->
     <div class="ovw-text">
-      <div class="ovw-icon" style="margin:0 auto 10px">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-      </div>
       <h2>What is DB Schema Analyzer?</h2>
       <p>A free, privacy-first tool that reviews your database schema design instantly — right in the browser. Paste your <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--ac)">CREATE TABLE</code> statements and get a scored report covering integrity, security, normalization, naming, relationships, and query patterns — with specific SQL fixes for every issue found.</p>
       <div class="ovw-badges">
@@ -397,15 +394,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 </div>
 
 <div class="lay">
-  <!-- NAV -->
-  <nav class="nav">
-    <div class="nl">Steps</div>
-    <div class="ni act" onclick="goto('s1')"><span class="nsn">1</span>Business Overview</div>
-    <div class="ni" onclick="goto('s2')"><span class="nsn">2</span>Schemas &amp; Queries</div>
-    <div class="ni" onclick="goto('s3')"><span class="nsn">3</span>Analyze</div>
-    <div class="ndv"></div>
-    <div class="ntip"><strong>All analysis runs in your browser.</strong><br>No schema data is ever sent to any server. Works fully offline.</div>
-  </nav>
+  <!-- NAV removed — single column layout -->
 
   <!-- MAIN -->
   <main class="mn">
