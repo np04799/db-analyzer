@@ -257,6 +257,13 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .dbar{flex:1;height:5px;background:var(--b);border-radius:3px;overflow:hidden}
 .df{height:100%;border-radius:3px;transition:width .7s ease}
 .dsc{font-size:11px;font-weight:700;width:36px;text-align:right}
+.sum-sev-pills{display:flex;align-items:center;gap:4px;margin-left:8px;flex-shrink:0}
+.sum-pill{display:inline-flex;align-items:center;justify-content:center;min-width:18px;padding:1px 5px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all var(--tr);text-decoration:none}
+.sum-pill:hover{opacity:.8;transform:translateY(-1px)}
+.sum-pill-c{background:var(--crbg);color:var(--cr);border-color:rgba(248,81,73,.25)}
+.sum-pill-h{background:var(--hibg);color:var(--hi);border-color:rgba(240,136,62,.25)}
+.sum-pill-m{background:var(--mebg);color:var(--me);border-color:rgba(210,153,34,.25)}
+.sum-pill-l{background:var(--lobg);color:var(--lo);border-color:rgba(63,185,80,.25)}
 
 /* DATA TABLE */
 .dt{width:100%;border-collapse:collapse;font-size:11px}
@@ -1048,6 +1055,17 @@ function stripFilter(sev, tile) {
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function goto(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 function swTab(tp, btn) { document.querySelectorAll('.tb').forEach(b => b.classList.remove('ac')); document.querySelectorAll('.tp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.getElementById(tp).classList.add('ac'); }
+function goToIssuesSev(sev) {
+  // Switch to Issues tab
+  const issuesBtn = document.querySelector('.tb[data-tp="ti"]');
+  swTab('ti', issuesBtn);
+  // Apply severity filter
+  const pill = document.querySelector('.fp[data-f="' + sev + '"]');
+  if (pill) filterF(sev, pill);
+  // Scroll to results
+  document.getElementById('res').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function filterF(f, btn) { document.querySelectorAll('.fp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.querySelectorAll('.fc').forEach(c => { c.style.display = (f === 'all' || c.dataset.sev === f) ? '' : 'none'; }); document.querySelectorAll('.rs').forEach(s => { const v = s.querySelectorAll('.fc:not([style*="none"])').length; s.style.display = v ? '' : 'none'; }); }
 function resetUI() { document.getElementById('res').classList.remove('on'); result = null; window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function sIcon(s) { return { 'Schema & Architecture': '🏗️', 'Keys & Integrity': '🔑', 'Normalization': '📐', 'Security': '🔒', 'Indexing & Performance': '⚡', 'Relationships': '🔗', 'Query Analysis': '📋', 'Other': '📌' }[s] || '📌'; }
@@ -1338,7 +1356,26 @@ function renderAll(r) {
 
   // Summary tab
   const DC = { 'Schema & Architecture': '#2D8CFF', 'Keys & Integrity': '#F85149', 'Normalization': '#A371F7', 'Security': '#FF6B6B', 'Indexing & Performance': '#F0883E', 'Relationships': '#3FB950', 'Query Analysis': '#D29922' };
-  const dimRows = Object.entries(r.gSecs).map(([k, v]) => `<div class="dr"><div class="dl">${k}</div><div class="dbar"><div class="df" style="width:${v.score}%;background:${DC[k] || 'var(--ac)'}"></div></div><div class="dsc" style="color:${DC[k] || 'var(--ac)'}">${v.score}%</div></div>`).join('');
+  const dimRows = Object.entries(r.gSecs).map(([k, v]) => {
+    const dc = DC[k] || 'var(--ac)';
+    const sFindings = v.findings || [];
+    const sc = { critical: 0, high: 0, medium: 0, low: 0 };
+    sFindings.forEach(f => { if (sc[f.severity] !== undefined) sc[f.severity]++; });
+    const pills = [
+      sc.critical ? `<span class="sum-pill sum-pill-c" onclick="goToIssuesSev('critical')" title="Filter Issues: Critical">${sc.critical} C</span>` : '',
+      sc.high     ? `<span class="sum-pill sum-pill-h" onclick="goToIssuesSev('high')"     title="Filter Issues: High">${sc.high} H</span>` : '',
+      sc.medium   ? `<span class="sum-pill sum-pill-m" onclick="goToIssuesSev('medium')"   title="Filter Issues: Medium">${sc.medium} M</span>` : '',
+      sc.low      ? `<span class="sum-pill sum-pill-l" onclick="goToIssuesSev('low')"      title="Filter Issues: Low">${sc.low} L</span>` : '',
+    ].join('');
+    const totalIssues = sFindings.length;
+    const issueLink = totalIssues ? `<span class="sum-pill" style="background:var(--s3);color:var(--t2);border-color:var(--b);cursor:pointer" onclick="goToIssuesSev('all')" title="View all issues in Issues tab">${totalIssues} issue${totalIssues > 1 ? 's' : ''}</span>` : '';
+    return `<div class="dr" style="margin-bottom:8px">
+      <div class="dl">${k}</div>
+      <div class="dbar"><div class="df" style="width:${v.score}%;background:${dc}"></div></div>
+      <div class="dsc" style="color:${dc}">${v.score}%</div>
+      <div class="sum-sev-pills">${pills}${!pills ? issueLink || '<span style="font-size:10px;color:var(--t3)">✓ clean</span>' : ''}</div>
+    </div>`;
+  }).join('');
   const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📋</span><span class="rt">S1 — Business Context</span><span class="rc">▶</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
   const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
   const insightHTML = renderSchemaInsight(r);
