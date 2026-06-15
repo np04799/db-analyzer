@@ -15,23 +15,47 @@ DB Schema Analyzer runs 40+ deterministic rules against your `CREATE TABLE` DDL 
 - **Normalization** — 1NF repeating groups, 3NF derived columns, wide table detection
 - **Security** — plaintext passwords, unencrypted PII (SSN, NIN), raw card numbers, token storage
 - **Naming** — reserved words as table/column names, ALLCAPS, mixed conventions, cryptic names
-- **Relationships** — missing FK constraints on `_id` columns, isolated tables, cross-schema FKs
+- **Relationships** — missing FK constraints on `_id` columns, isolated tables
 - **Indexing** — missing indexes on all FK columns
 - **Query Analysis** — `SELECT *`, `UPDATE/DELETE` without `WHERE`, implicit JOIN syntax
-- **Schema Intelligence** — recommends schema splits, flags domain mixing, suggests future schemas
+- **Schema Intelligence** — recommends schema splits, flags quality gaps, suggests future schemas
 
 ---
 
 ## Quick Start
 
 1. Open **https://db-analyzer-two.vercel.app/**
-2. Describe your system in **Step 1** and select your database platform
-3. Paste `CREATE TABLE` statements in **Step 2** (or upload a `.sql` / `.txt` / `.ddl` file)
-4. Click **Analyze Schema**
-5. Review results across Issues, Summary, Solutions, Comparison, and Roadmap tabs
-6. Click **Export PDF Report** to download a full analysis document
+2. Read the **"What is DB Schema Analyzer?"** overview and steps
+3. Describe your system in **Step 1** and select your database platform
+4. Paste `CREATE TABLE` statements in **Step 2** (or upload a `.sql` / `.txt` / `.ddl` file)
+5. Click **Analyze Schema**
+6. Review results across Issues, Summary, Solutions, Comparison, and Roadmap tabs
+7. Click **Export PDF Report** to download a full analysis document
 
 No login required. Works completely offline after first load.
+
+---
+
+## Page Layout
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Header — DB Schema Analyzer  v1.0  Rule Engine  Privacy │
+├─────────────────────────────────────────────────────────┤
+│     What is DB Schema Analyzer?  (overview strip)        │
+│     ① Business Overview → ② Schemas → ③ Analyze         │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│   Step 1 — Business Overview                             │
+│   Step 2 — Schemas & Queries                             │
+│   Step 3 — Analysis Options + Results                    │
+│                                                          │
+├─────────────────────────────────────────────────────────┤
+│  How It Works  (5-step horizontal pipeline)              │
+├─────────────────────────────────────────────────────────┤
+│  Footer — What It Analyzes · Supported Platforms         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -54,7 +78,7 @@ No login required. Works completely offline after first load.
 | Layer | Technology |
 |---|---|
 | Frontend | Vanilla HTML5, CSS3, JavaScript (ES6+) |
-| PDF Export | [jsPDF 2.5.1](https://github.com/parallax/jsPDF) (CDN) |
+| PDF Export | jsPDF 2.5.1 (CDN) |
 | Hosting | Vercel Static |
 | Build | None — single HTML file, no bundler |
 
