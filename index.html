@@ -1315,10 +1315,9 @@ function renderSchemaInsight(r) {
   }).join('');
   
   return `<div class="rs ex" style="margin-bottom:10px">
-    <div class="rsh2" onclick="this.parentElement.classList.toggle('ex')">
+    <div class="rsh2" style="cursor:default">
       <span class="ri">🧠</span>
       <span class="rt">Schema Intelligence — Design Recommendations</span>
-      <span class="rc">▶</span>
     </div>
     <div class="rbd">${cards}</div>
   </div>`;
@@ -1378,11 +1377,11 @@ function renderAll(r) {
       <div class="dsc" style="color:${dc}">${v.score}%</div>
     </div>`;
   }).join('');
-  const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📋</span><span class="rt">S1 — Business Context</span><span class="rc">▶</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
+  const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📋</span><span class="rt">S1 — Business Context</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
   const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
   const insightHTML = renderSchemaInsight(r);
-  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div><span class="rc">▶</span></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span><span class="rc">▶</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
-  document.getElementById('sumC').querySelectorAll('.rsh2').forEach(h => h.onclick = () => h.parentElement.classList.toggle('ex'));
+  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
+  // Summary cards always expanded — no collapse behaviour
 
   // Comparison tab
   const cmpC = document.getElementById('cmpC');
@@ -1392,8 +1391,8 @@ function renderAll(r) {
   } else {
     document.getElementById('cmpTab').style.opacity = '1';
     const rows = r.srs.map(sr => { const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; }); return `<tr><td><strong>${esc(sr.name)}</strong><br><span style="font-size:9px;color:var(--t3)">${esc(sr.platform)}</span></td><td><span style="font-size:18px;font-weight:800;color:${scC(sr.score)}">${sr.score}%</span></td><td>${sr.tables.length}</td><td>${sr.tables.reduce((s, t) => s + t.columns.length, 0)}</td><td><span style="color:var(--cr)">${c2.critical}</span></td><td><span style="color:var(--hi)">${c2.high}</span></td><td><span style="color:var(--me)">${c2.medium}</span></td><td><span style="color:var(--lo)">${c2.low}</span></td><td>${sr.findings.length}</td></tr>`; }).join('');
-    cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" onclick="this.parentElement.classList.toggle('ex')"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span><span class="rc">▶</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-    cmpC.querySelector('.rsh2').onclick = () => cmpC.querySelector('.rs').classList.toggle('ex');
+    cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    // Comparison card always expanded — no collapse
   }
 
   // Roadmap tab
