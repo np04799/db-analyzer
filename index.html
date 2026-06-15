@@ -25,9 +25,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 /* OVERVIEW STRIP */
 .ovw{background:linear-gradient(135deg,var(--s2) 0%,var(--s1) 100%);border-bottom:1px solid var(--b);padding:22px 32px}
-.ovw-inner{max-width:1440px;margin:0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:32px;padding:0 4px}
+.ovw-inner{max-width:900px;margin:0 auto;display:flex;justify-content:center}
 .ovw-icon{width:44px;height:44px;border-radius:12px;background:var(--acbg);border:1px solid rgba(45,140,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ovw-steps{display:flex;flex-direction:column;gap:14px;min-width:260px;flex-shrink:0}
+.ovw-hsteps{display:flex;align-items:flex-start;justify-content:center;gap:0;margin-top:20px;padding-top:18px;border-top:1px solid var(--b);flex-wrap:wrap}
+.ovw-hstep{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:140px;max-width:200px;text-align:center}
+.ovw-hstep .ovw-step-txt{display:flex;flex-direction:column;gap:2px;align-items:center}
+.ovw-hstep .ovw-step-txt strong{font-size:12px;color:var(--tx)}
+.ovw-hstep .ovw-step-txt span{font-size:11px;color:var(--t3)}
+.ovw-harr{color:var(--b2);font-size:18px;padding:0 6px;margin-top:12px;flex-shrink:0}
 .ovw-step-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:2px}
 .ovw-step-item{display:flex;align-items:flex-start;gap:11px}
 .ovw-step-num{width:28px;height:28px;border-radius:50%;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
@@ -35,7 +41,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ovw-step-txt strong{font-size:13px;color:var(--tx);font-weight:600}
 .ovw-step-txt span{font-size:11px;color:var(--t3)}
 .ovw-divider{width:1px;background:var(--b);align-self:stretch;flex-shrink:0;margin:0 8px}
-.ovw-text{text-align:center;max-width:480px;flex-shrink:0}.ovw-text h2{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.ovw-text{text-align:center;width:100%}.ovw-text h2{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
 .ovw-text p{font-size:13px;color:var(--t2);line-height:1.6;text-align:center}
 .ovw-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .ovw-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
@@ -333,36 +339,13 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 <div class="ovw">
   <div class="ovw-inner">
 
-    <!-- LEFT: Steps navigation -->
-    <div class="ovw-steps">
-      <div class="ovw-step-label">Steps</div>
-      <div class="ovw-step-item">
-        <div class="ovw-step-num" style="background:rgba(45,140,255,.15);color:var(--ac);border-color:rgba(45,140,255,.25)">1</div>
-        <div class="ovw-step-txt">
-          <strong>Business Overview</strong>
-          <span>Describe your system &amp; pick platform</span>
-        </div>
-      </div>
-      <div class="ovw-step-item">
-        <div class="ovw-step-num" style="background:rgba(63,185,80,.15);color:var(--ok);border-color:rgba(63,185,80,.25)">2</div>
-        <div class="ovw-step-txt">
-          <strong>Schemas &amp; Queries</strong>
-          <span>Paste DDL or upload .sql file</span>
-        </div>
-      </div>
-      <div class="ovw-step-item">
-        <div class="ovw-step-num" style="background:rgba(163,113,247,.15);color:var(--pv);border-color:rgba(163,113,247,.25)">3</div>
-        <div class="ovw-step-txt">
-          <strong>Analyze &amp; Export</strong>
-          <span>Get scored report + export PDF</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- DIVIDER -->
+    <!-- LEFT: Steps navigation — commented out, already in left nav -->
+    <!--
+    <div class="ovw-steps">...</div>
     <div class="ovw-divider"></div>
+    -->
 
-    <!-- RIGHT: What is it -->
+    <!-- CENTER: What is it + horizontal steps below -->
     <div class="ovw-text">
       <div class="ovw-icon" style="margin:0 auto 10px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
@@ -390,6 +373,23 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           PDF report export
         </span>
+      </div>
+      <!-- Horizontal steps below the description -->
+      <div class="ovw-hsteps">
+        <div class="ovw-hstep">
+          <div class="ovw-step-num" style="background:rgba(45,140,255,.15);color:var(--ac);border-color:rgba(45,140,255,.25)">1</div>
+          <div class="ovw-step-txt"><strong>Business Overview</strong><span>Describe system &amp; pick platform</span></div>
+        </div>
+        <div class="ovw-harr">→</div>
+        <div class="ovw-hstep">
+          <div class="ovw-step-num" style="background:rgba(63,185,80,.15);color:var(--ok);border-color:rgba(63,185,80,.25)">2</div>
+          <div class="ovw-step-txt"><strong>Schemas &amp; Queries</strong><span>Paste DDL or upload .sql</span></div>
+        </div>
+        <div class="ovw-harr">→</div>
+        <div class="ovw-hstep">
+          <div class="ovw-step-num" style="background:rgba(163,113,247,.15);color:var(--pv);border-color:rgba(163,113,247,.25)">3</div>
+          <div class="ovw-step-txt"><strong>Analyze &amp; Export</strong><span>Scored report + PDF</span></div>
+        </div>
       </div>
     </div>
 
