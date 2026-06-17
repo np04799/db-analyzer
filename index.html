@@ -1054,7 +1054,21 @@ function stripFilter(sev, tile) {
 }
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function goto(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-function swTab(tp, btn) { document.querySelectorAll('.tb').forEach(b => b.classList.remove('ac')); document.querySelectorAll('.tp').forEach(p => p.classList.remove('ac')); btn.classList.add('ac'); document.getElementById(tp).classList.add('ac'); }
+// Tab render registry — maps tab id to its render function
+// Add any tab here that needs a fresh render on every activation
+const TAB_RENDERERS = {
+  ts:   (r) => renderSummaryTab(r),
+  tc:   (r) => renderComparisonTab(r),
+};
+
+function swTab(tp, btn) {
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('ac'));
+  document.querySelectorAll('.tp').forEach(p => p.classList.remove('ac'));
+  btn.classList.add('ac');
+  document.getElementById(tp).classList.add('ac');
+  // Re-render tab if it has a registered renderer and analysis has run
+  if (result && TAB_RENDERERS[tp]) TAB_RENDERERS[tp](result);
+}
 function goToIssuesSev(sev) {
   // Switch to Issues tab
   const issuesBtn = document.querySelector('.tb[data-tp="ti"]');
@@ -1323,6 +1337,25 @@ function renderSchemaInsight(r) {
   </div>`;
 }
 
+function renderSummaryTab(r) {
+  const insightHTML = renderSchemaInsight(r);
+  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
+  // Summary cards always expanded — no collapse behaviour
+}
+
+function renderComparisonTab(r) {
+  const cmpC = document.getElementById('cmpC');
+  if (r.srs.length < 2) {
+    cmpC.innerHTML = `<div class="sk"><span style="font-size:18px;opacity:.5">🔀</span><div><strong>Schema Comparison</strong> — requires 2 or more schemas. Add another schema and re-analyze to see a side-by-side comparison.</div></div>`;
+    document.getElementById('cmpTab').style.opacity = '.5';
+  } else {
+    document.getElementById('cmpTab').style.opacity = '1';
+    const rows = r.srs.map(sr => { const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; }); return `<tr><td><strong>${esc(sr.name)}</strong><br><span style="font-size:9px;color:var(--t3)">${esc(sr.platform)}</span></td><td><span style="font-size:18px;font-weight:800;color:${scC(sr.score)}">${sr.score}%</span></td><td>${sr.tables.length}</td><td>${sr.tables.reduce((s, t) => s + t.columns.length, 0)}</td><td><span style="color:var(--cr)">${c2.critical}</span></td><td><span style="color:var(--hi)">${c2.high}</span></td><td><span style="color:var(--me)">${c2.medium}</span></td><td><span style="color:var(--lo)">${c2.low}</span></td><td>${sr.findings.length}</td></tr>`; }).join('');
+    cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    // Comparison card always expanded — no collapse
+  }
+}
+
 function renderAll(r) {
   // Score strip
   const scoreHintHTML = `<div class="score-hint-wrap"><i class="score-hint-icon">ⓘ<div class="score-hint-pop"><div class="score-hint-arrow"></div><h4>How the Health Score is calculated</h4><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span><strong>Base:</strong> 100 minus penalties per issue</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span>Critical = −15 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--hi)"></div><span>High = −8 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--me)"></div><span>Medium = −4 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--lo)"></div><span>Low = −1 pt each</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:10px;color:var(--t3)"><strong style="color:var(--t2)">Section weights:</strong> Keys &amp; Integrity 25% · Normalization 20% · Schema 20% · Security 15% · Indexing 10% · Relationships 10%<br><br><strong style="color:var(--t2)">Grades:</strong> A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60</div></div></i></div>`;
@@ -1377,21 +1410,10 @@ function renderAll(r) {
   }).join('');
   const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📋</span><span class="rt">S1 — Business Context</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
   const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
-  const insightHTML = renderSchemaInsight(r);
-  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
-  // Summary cards always expanded — no collapse behaviour
+  renderSummaryTab(r);
 
   // Comparison tab
-  const cmpC = document.getElementById('cmpC');
-  if (r.srs.length < 2) {
-    cmpC.innerHTML = `<div class="sk"><span style="font-size:18px;opacity:.5">🔀</span><div><strong>Schema Comparison</strong> — requires 2 or more schemas. Add another schema and re-analyze to see a side-by-side comparison.</div></div>`;
-    document.getElementById('cmpTab').style.opacity = '.5';
-  } else {
-    document.getElementById('cmpTab').style.opacity = '1';
-    const rows = r.srs.map(sr => { const c2 = { critical: 0, high: 0, medium: 0, low: 0 }; sr.findings.forEach(f => { if (c2[f.severity] !== undefined) c2[f.severity]++; }); return `<tr><td><strong>${esc(sr.name)}</strong><br><span style="font-size:9px;color:var(--t3)">${esc(sr.platform)}</span></td><td><span style="font-size:18px;font-weight:800;color:${scC(sr.score)}">${sr.score}%</span></td><td>${sr.tables.length}</td><td>${sr.tables.reduce((s, t) => s + t.columns.length, 0)}</td><td><span style="color:var(--cr)">${c2.critical}</span></td><td><span style="color:var(--hi)">${c2.high}</span></td><td><span style="color:var(--me)">${c2.medium}</span></td><td><span style="color:var(--lo)">${c2.low}</span></td><td>${sr.findings.length}</td></tr>`; }).join('');
-    cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-    // Comparison card always expanded — no collapse
-  }
+  renderComparisonTab(r);
 
   // Roadmap tab
   const hasQ = r.srs.some(sr => sr.queries && sr.queries.trim());
