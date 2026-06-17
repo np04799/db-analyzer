@@ -1343,6 +1343,29 @@ function renderSchemaInsight(r) {
 
 function renderSummaryTab(r) {
   const insightHTML = renderSchemaInsight(r);
+  const DC = { 'Schema & Architecture': '#2D8CFF', 'Keys & Integrity': '#F85149', 'Normalization': '#A371F7', 'Security': '#FF6B6B', 'Indexing & Performance': '#F0883E', 'Relationships': '#3FB950', 'Query Analysis': '#D29922' };
+  const dimRows = Object.entries(r.gSecs).map(([k, v]) => {
+    const dc = DC[k] || 'var(--ac)';
+    const sFindings = v.findings || [];
+    const sc = { critical: 0, high: 0, medium: 0, low: 0 };
+    sFindings.forEach(f => { if (sc[f.severity] !== undefined) sc[f.severity]++; });
+    const pills = [
+      sc.critical ? `<span class="sum-pill sum-pill-c" onclick="goToIssuesSev('critical')" title="Filter Issues: Critical">${sc.critical} C</span>` : '',
+      sc.high     ? `<span class="sum-pill sum-pill-h" onclick="goToIssuesSev('high')"     title="Filter Issues: High">${sc.high} H</span>` : '',
+      sc.medium   ? `<span class="sum-pill sum-pill-m" onclick="goToIssuesSev('medium')"   title="Filter Issues: Medium">${sc.medium} M</span>` : '',
+      sc.low      ? `<span class="sum-pill sum-pill-l" onclick="goToIssuesSev('low')"      title="Filter Issues: Low">${sc.low} L</span>` : '',
+    ].join('');
+    const totalIssues = sFindings.length;
+    const issueLink = totalIssues ? `<span class="sum-pill" style="background:var(--s3);color:var(--t2);border-color:var(--b);cursor:pointer" onclick="goToIssuesSev('all')" title="View all issues in Issues tab">${totalIssues} issue${totalIssues > 1 ? 's' : ''}</span>` : '';
+    return `<div class="dr" style="margin-bottom:6px">
+      <div class="dl">${k}</div>
+      <div class="dbar"><div class="df" style="width:${v.score}%;background:${dc}"></div></div>
+      <div class="dsc" style="color:${dc}">${v.score}%</div>
+      <div class="sum-sev-pills">${pills || '<span style="font-size:10px;color:var(--t3)">✓</span>'}</div>
+    </div>`;
+  }).join('');
+  const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📋</span><span class="rt">S1 — Business Context</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
+  const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
   document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
   // Summary cards always expanded — no collapse behaviour
 }
@@ -1391,29 +1414,6 @@ function renderAll(r) {
   document.getElementById('iBdg').textContent = r.allF.length;
 
   // Summary tab
-  const DC = { 'Schema & Architecture': '#2D8CFF', 'Keys & Integrity': '#F85149', 'Normalization': '#A371F7', 'Security': '#FF6B6B', 'Indexing & Performance': '#F0883E', 'Relationships': '#3FB950', 'Query Analysis': '#D29922' };
-  const dimRows = Object.entries(r.gSecs).map(([k, v]) => {
-    const dc = DC[k] || 'var(--ac)';
-    const sFindings = v.findings || [];
-    const sc = { critical: 0, high: 0, medium: 0, low: 0 };
-    sFindings.forEach(f => { if (sc[f.severity] !== undefined) sc[f.severity]++; });
-    const pills = [
-      sc.critical ? `<span class="sum-pill sum-pill-c" onclick="goToIssuesSev('critical')" title="Filter Issues: Critical">${sc.critical} C</span>` : '',
-      sc.high     ? `<span class="sum-pill sum-pill-h" onclick="goToIssuesSev('high')"     title="Filter Issues: High">${sc.high} H</span>` : '',
-      sc.medium   ? `<span class="sum-pill sum-pill-m" onclick="goToIssuesSev('medium')"   title="Filter Issues: Medium">${sc.medium} M</span>` : '',
-      sc.low      ? `<span class="sum-pill sum-pill-l" onclick="goToIssuesSev('low')"      title="Filter Issues: Low">${sc.low} L</span>` : '',
-    ].join('');
-    const totalIssues = sFindings.length;
-    const issueLink = totalIssues ? `<span class="sum-pill" style="background:var(--s3);color:var(--t2);border-color:var(--b);cursor:pointer" onclick="goToIssuesSev('all')" title="View all issues in Issues tab">${totalIssues} issue${totalIssues > 1 ? 's' : ''}</span>` : '';
-    return `<div class="dr" style="margin-bottom:6px">
-      <div class="dl">${k}</div>
-      <div class="dbar"><div class="df" style="width:${v.score}%;background:${dc}"></div></div>
-      <div class="dsc" style="color:${dc}">${v.score}%</div>
-      <div class="sum-sev-pills">${pills || '<span style="font-size:10px;color:var(--t3)">✓</span>'}</div>
-    </div>`;
-  }).join('');
-  const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📋</span><span class="rt">S1 — Business Context</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
-  const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
   renderSummaryTab(r);
 
   // Comparison tab
