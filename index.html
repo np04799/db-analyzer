@@ -49,6 +49,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 /* HOW IT WORKS BANNER */
 .hiw{background:var(--s1);border-bottom:1px solid var(--b);padding:14px 32px}
 .hiw-heading{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px}
+.hiw-heading a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:color var(--tr)}
+.hiw-heading a:hover{color:var(--ac)}
+.hiw-heading a svg{flex-shrink:0;opacity:.7;transition:opacity var(--tr)}
+.hiw-heading a:hover svg{opacity:1}
 .hiw-inner{display:flex;align-items:center;justify-content:center;gap:0;max-width:1440px;margin:0 auto}
 .hiw-step{display:flex;align-items:center;gap:9px;padding:7px 14px;flex-shrink:0}
 .hiw-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
@@ -1797,7 +1801,7 @@ addSchema('', 'Schema 1');
 
 <!-- HOW IT WORKS BANNER -->
 <div class="hiw">
-  <div class="hiw-heading">How It Works</div>
+  <div class="hiw-heading"><a href="https://raw.githubusercontent.com/np04799/db-analyzer/main/assets/DB_Schema_Analyzer_Presentations.zip" download title="Download both PPT presentations (full deck + one-pager)">How It Works <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>
   <div class="hiw-inner">
     <div class="hiw-step">
       <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
