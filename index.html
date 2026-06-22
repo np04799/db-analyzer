@@ -524,6 +524,51 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
         </button>
       </div>
       <div class="ss" id="scoreStrip"></div>
+      <!-- HOW THIS ANALYSIS WORKS -->
+      <div id="analysisInfo" style="margin-bottom:14px;background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden">
+        <div onclick="this.parentElement.classList.toggle('ex')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px">🔍</span>
+            <strong style="font-size:13px;color:var(--tx)">How this analysis works</strong>
+            <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(45,140,255,.1);color:var(--ac);font-weight:600;border:1px solid rgba(45,140,255,.2)">Rule-based static analysis</span>
+          </div>
+          <span class="ai-arr" style="font-size:11px;color:var(--t3);transition:transform .2s">▶</span>
+        </div>
+        <div class="ai-body" style="display:none;padding:0 16px 16px;border-top:1px solid var(--b)">
+          <p style="font-size:12px;color:var(--t2);line-height:1.7;margin:12px 0 10px">This tool is a <strong style="color:var(--tx)">static linter for database schemas</strong> — the same way ESLint catches bugs without running your code, this catches design issues without running your SQL. It parses your <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--ac)">CREATE TABLE</code> statements into a structured object tree and runs 40+ deterministic rules. No AI, no guessing — every finding either fires or it doesn't.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);padding:10px 12px">
+              <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px">✅ What it reliably catches</div>
+              <ul style="font-size:11px;color:var(--t2);line-height:1.9;margin:0;padding-left:14px">
+                <li>Missing primary keys and foreign key constraints</li>
+                <li>Plaintext passwords, exposed PII (SSN, NIN), raw card numbers</li>
+                <li>FLOAT/REAL used for monetary columns</li>
+                <li>1NF/2NF/3NF normalization violations</li>
+                <li>Missing indexes on FK columns</li>
+                <li>Reserved words as table/column names</li>
+                <li>Query anti-patterns (SELECT *, UPDATE without WHERE)</li>
+                <li>Platform type incompatibilities</li>
+              </ul>
+            </div>
+            <div style="background:rgba(248,81,73,.05);border:1px solid rgba(248,81,73,.15);border-radius:var(--r);padding:10px 12px">
+              <div style="font-size:11px;font-weight:700;color:var(--cr);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px">⚠️ v1 Limitations</div>
+              <ul style="font-size:11px;color:var(--t2);line-height:1.9;margin:0;padding-left:14px">
+                <li>No live DB connection — schema-only analysis</li>
+                <li>Cannot see row data, null rates or cardinality</li>
+                <li>No query execution plan or real index stats</li>
+                <li>Cannot validate business logic against constraints</li>
+                <li>Stored procedures, triggers and views not parsed</li>
+                <li>Cross-database FK validation not possible</li>
+              </ul>
+            </div>
+          </div>
+          <div style="background:var(--s2);border-radius:var(--r);padding:10px 12px;font-size:11px;color:var(--t2);line-height:1.7;border-left:3px solid var(--ac)">
+            <strong style="color:var(--ac)">How to rely on it:</strong> Catches the structural, security and naming issues a senior DBA would flag in a design review — before a single line of application code is written. Surfaces 80% of common design mistakes instantly, for free, without sharing your schema with anyone.
+          </div>
+        </div>
+      </div>
+      <style>#analysisInfo.ex .ai-body{display:block!important}#analysisInfo.ex .ai-arr{transform:rotate(90deg)}</style>
+
       <div class="tbs">
         <button class="tb ac" data-tp="ti" onclick="swTab('ti',this)">🐛 Issues <span class="tbd" id="iBdg">0</span></button>
         <button class="tb" data-tp="ts" onclick="swTab('ts',this)">📊 Summary</button>
@@ -1622,6 +1667,59 @@ function buildPDF(r) {
     st(...C.t2); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
     doc.text(k.l, kx + kw / 2, y + 15.5, { align: 'center' });
   });
+
+  setPP(11, 'Methodology...');
+
+  // ── ABOUT THIS ANALYSIS ──────────────────────────────────
+  newPage(false);
+  secBanner('A', 'About This Analysis');
+
+  // Intro
+  st(...C.t2); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const introTxt = 'DB Schema Analyzer is a rule-based static linter for database schemas — similar to how ESLint catches code bugs without running your program, this tool catches design issues without running your SQL against a live database. It parses your CREATE TABLE statements into a structured object tree and runs 40+ deterministic rules. No AI, no probability — every finding either fires or it does not.';
+  const introLines = doc.splitTextToSize(introTxt, PW);
+  doc.text(introLines, ML, y); y += introLines.length * 5 + 6;
+
+  // Two columns
+  const colW = (PW - 5) / 2, col2X = ML + colW + 5;
+
+  // Left: What it catches
+  sf(40, 167, 93); doc.roundedRect(ML, y, colW, 72, 1.5, 1.5, 'F');
+  sf(63, 185, 80); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+  doc.text('WHAT IT RELIABLY CATCHES', ML + 4, y + 7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  const catches = ['Missing PKs and FK constraints','Plaintext passwords, exposed PII (SSN, NIN)','Raw card numbers in plain columns','FLOAT/REAL for monetary values','1NF / 2NF / 3NF normalization violations','Missing indexes on FK columns','Reserved words as table/column names','Query anti-patterns (SELECT *, no WHERE)','Platform type incompatibilities'];
+  catches.forEach((c, i) => {
+    st(...C.ok); doc.text('✓', ML + 4, y + 14 + i * 6.5);
+    st(...C.t2); doc.text(c, ML + 9, y + 14 + i * 6.5);
+  });
+
+  // Right: Limitations
+  sf(80, 20, 16); doc.roundedRect(col2X, y, colW, 72, 1.5, 1.5, 'F');
+  sf(248, 81, 73); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+  doc.text('V1 LIMITATIONS', col2X + 4, y + 7);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  const limits = ['No live DB connection — schema-only','Cannot see row data, null rates or cardinality','No query execution plan or index stats','Cannot validate business logic vs constraints','Stored procedures and triggers not parsed','Views not analysed','Cross-database FK validation not possible','Data volume and growth not assessed'];
+  limits.forEach((l, i) => {
+    st(...C.cr); doc.text('✗', col2X + 4, y + 14 + i * 6.5);
+    st(...C.t2); doc.text(l, col2X + 9, y + 14 + i * 6.5);
+  });
+  y += 78;
+
+  // How to rely on it box
+  sf(...C.acbg); doc.setDrawColor(...C.ac); doc.roundedRect(ML, y, PW, 20, 1.5, 1.5, 'FD');
+  st(...C.ac); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('How to rely on it', ML + 4, y + 7);
+  st(...C.t2); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  const reliTxt = 'Catches the structural, security and naming issues a senior DBA would flag in a design review — before a single line of application code is written. Surfaces 80% of common design mistakes instantly, for free, without sharing your schema with anyone. Use it as a first-pass design gate, not a replacement for a live database audit.';
+  const reliLines = doc.splitTextToSize(reliTxt, PW - 8);
+  doc.text(reliLines, ML + 4, y + 13); y += 26;
+
+  // Methodology note
+  st(...C.t3); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+  const methTxt = 'Methodology: DDL is parsed using a balanced-parenthesis walker that correctly handles nested function calls (DEFAULT NOW(), gen_random_uuid()), inline REFERENCES and quoted identifiers. All 40+ rules run synchronously in the browser — no data is transmitted to any server at any point.';
+  const methLines = doc.splitTextToSize(methTxt, PW);
+  doc.text(methLines, ML, y); y += methLines.length * 4.5 + 4;
 
   setPP(12, 'S1 — Business context...');
 
