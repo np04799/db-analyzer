@@ -1017,7 +1017,10 @@ async function runAnalysis() {
     const cnt = { critical: 0, high: 0, medium: 0, low: 0 };
     allF.forEach(f => { if (cnt[f.severity] !== undefined) cnt[f.severity]++; });
 
-    result = { srs, allF, allT, gSecs, gScore, roadmap: calcRoadmap(allF), domain, overview, cnt };
+    const platformMismatches = srs.flatMap(sr =>
+      detectPlatformMismatch(sr.tables, sr.platform).map(m => ({ ...m, schema: sr.name, platform: sr.platform }))
+    );
+    result = { srs, allF, allT, gSecs, gScore, roadmap: calcRoadmap(allF), domain, overview, cnt, platformMismatches };
 
     clearInterval(iv);
     steps.forEach((_, i) => document.getElementById('ps'+i).className = 'pst dn');
@@ -1366,7 +1369,30 @@ function renderSummaryTab(r) {
   }).join('');
   const ovBlock = r.overview ? `<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📋</span><span class="rt">S1 — Business Context</span></div><div class="rbd"><div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:11px;font-size:11px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(r.overview)}</div>${r.domain ? `<div style="margin-top:9px;padding:7px 10px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);font-size:11px;color:var(--t2)"><strong style="color:var(--ok)">Domain: ${r.domain}</strong> — Findings are weighted to prioritize issues relevant to this domain.</div>` : ''}</div></div>` : '';
   const tblRows = r.srs.flatMap(sr => sr.tables.map(t => { const tf = r.allF.filter(f => f.table === t.name && f.schemaName === sr.name); const wo = tf.reduce((w, f) => ({ critical: 0, high: 1, medium: 2, low: 3 }[f.severity] < ({ critical: 0, high: 1, medium: 2, low: 3 }[w] ?? 4) ? f.severity : w), 'none'); const wc = { critical: 'var(--cr)', high: 'var(--hi)', medium: 'var(--me)', low: 'var(--lo)', none: 'var(--ok)' }[wo]; return `<tr><td><span class="stg">${esc(sr.name)}</span></td><td><strong>${esc(t.name)}</strong></td><td>${t.columns.length}</td><td>${t.constraints.pk ? '<span style="color:var(--ok)">✓ Yes</span>' : '<span style="color:var(--cr)">✗ No</span>'}</td><td>${t.constraints.fks.length}</td><td><span style="color:${wc};font-weight:600">${tf.length}</span></td></tr>`; })).join('');
-  document.getElementById('sumC').innerHTML = `${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
+  // Platform mismatch warning
+  let platformWarnHTML = '';
+  if (r.platformMismatches && r.platformMismatches.length > 0) {
+    const grouped = {};
+    r.platformMismatches.forEach(m => {
+      const key = m.platform;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(m);
+    });
+    const warnItems = Object.entries(grouped).map(([plat, items]) => {
+      const typeList = [...new Set(items.map(i => `<code style="background:var(--s3);padding:1px 4px;border-radius:3px;font-size:11px;color:var(--hi)">${esc(i.type)}</code>`))].join(' ');
+      const tableList = [...new Set(items.map(i => `${esc(i.schema)} › ${esc(i.table)}.${esc(i.column)}`))].slice(0, 5).join(', ');
+      return `<div style="margin-bottom:6px"><strong style="color:var(--hi)">${esc(plat)}</strong> — unsupported types detected: ${typeList}<br><span style="font-size:11px;color:var(--t3)">Found in: ${tableList}${items.length > 5 ? ` +${items.length - 5} more` : ''}</span></div>`;
+    }).join('');
+    platformWarnHTML = `<div style="background:rgba(240,136,62,.07);border:1px solid rgba(240,136,62,.25);border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:16px">⚠️</span>
+        <strong style="font-size:13px;color:var(--hi)">Platform Mismatch Detected</strong>
+      </div>
+      ${warnItems}
+      <div style="font-size:11px;color:var(--t3);margin-top:6px;padding-top:8px;border-top:1px solid rgba(240,136,62,.15)">Your DDL contains types not native to the selected platform. Switch to the correct platform in Step 1 and re-analyze, or update your DDL to use compatible types. Findings may not be fully accurate for this platform.</div>
+    </div>`;
+  }
+  document.getElementById('sumC').innerHTML = `${platformWarnHTML}${insightHTML}${ovBlock}<div class="rs ex" style="margin-bottom:10px"><div class="rsh2" style="cursor:default"><span class="ri">📊</span><span class="rt">S2 — Executive Summary</span><div class="rsb"><div class="rb"><div class="rf" style="width:${r.gScore}%;background:${scC(r.gScore)}"></div></div><span class="rp" style="color:${scC(r.gScore)}">${r.gScore}%</span></div></div><div class="rbd"><div class="dg">${dimRows}</div></div></div><div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🗂</span><span class="rt">S3 — Table Inventory (${r.allT.length} tables)</span></div><div class="rbd"><table class="dt"><thead><tr><th>Schema</th><th>Table</th><th>Columns</th><th>PK</th><th>FKs</th><th>Issues</th></tr></thead><tbody>${tblRows}</tbody></table></div></div>`;
   // Summary cards always expanded — no collapse behaviour
 }
 
@@ -1381,6 +1407,57 @@ function renderComparisonTab(r) {
     cmpC.innerHTML = `<div class="rs ex"><div class="rsh2" style="cursor:default"><span class="ri">🔀</span><span class="rt">S7 — Schema Comparison (${r.srs.length} schemas)</span></div><div class="rbd"><table class="ct2"><thead><tr><th>Schema</th><th>Health</th><th>Tables</th><th>Cols</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     // Comparison card always expanded — no collapse
   }
+}
+
+// ── PLATFORM MISMATCH DETECTOR ─────────────────────────────────────────
+const PLATFORM_TYPES = {
+  PostgreSQL: {
+    native:  ['SERIAL','BIGSERIAL','SMALLSERIAL','TIMESTAMPTZ','JSONB','INET','CIDR','UUID','MACADDR','TSVECTOR','TSQUERY','INT4RANGE','INT8RANGE','HSTORE','ARRAY'],
+    foreign: ['AUTO_INCREMENT','NVARCHAR','DATETIME','NUMBER','VARCHAR2','TINYINT','MEDIUMINT','LONGTEXT','MEDIUMTEXT'],
+  },
+  MySQL: {
+    native:  ['AUTO_INCREMENT','TINYINT','MEDIUMINT','LONGTEXT','MEDIUMTEXT','ENUM','SET','YEAR'],
+    foreign: ['SERIAL','BIGSERIAL','SMALLSERIAL','TIMESTAMPTZ','JSONB','INET','CIDR','TSVECTOR','NVARCHAR','VARCHAR2','NUMBER','IDENTITY'],
+  },
+  'SQL Server': {
+    native:  ['NVARCHAR','NCHAR','NTEXT','DATETIME2','DATETIMEOFFSET','UNIQUEIDENTIFIER','MONEY','SMALLMONEY','BIT','IMAGE','ROWVERSION'],
+    foreign: ['SERIAL','BIGSERIAL','AUTO_INCREMENT','TIMESTAMPTZ','JSONB','INET','BOOLEAN','VARCHAR2','NUMBER','TINYINT UNSIGNED'],
+  },
+  Oracle: {
+    native:  ['VARCHAR2','NVARCHAR2','NUMBER','CLOB','NCLOB','BLOB','RAW','ROWID','UROWID'],
+    foreign: ['SERIAL','BIGSERIAL','AUTO_INCREMENT','BOOLEAN','TIMESTAMPTZ','JSONB','INET','NVARCHAR','BIT','TINYINT'],
+  },
+  SQLite: {
+    native:  ['INTEGER','REAL','TEXT','BLOB','NUMERIC'],
+    foreign: ['SERIAL','BIGSERIAL','AUTO_INCREMENT','TIMESTAMPTZ','JSONB','INET','UUID','BOOLEAN','NVARCHAR','VARCHAR2'],
+  },
+};
+
+function detectPlatformMismatch(tables, platform) {
+  if (!platform || platform === 'Generic SQL') return [];
+  const sig = PLATFORM_TYPES[platform];
+  if (!sig) return [];
+
+  const mismatches = [];
+  tables.forEach(t => {
+    t.columns.forEach(col => {
+      const colType = col.type.toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').trim();
+      sig.foreign.forEach(bad => {
+        // Match on column type string
+        if (colType === bad || colType.startsWith(bad + ' ') || colType.startsWith(bad + '(')) {
+          mismatches.push({ table: t.name, column: col.name, type: col.type, bad });
+          return;
+        }
+        // AUTO_INCREMENT is stored as a column attribute (autoInc:true), not in col.type
+        // But SERIAL/BIGSERIAL also set autoInc:true — only flag if type is not a native PG serial
+        const pgSerials = ['SERIAL','BIGSERIAL','SMALLSERIAL'];
+        if (bad === 'AUTO_INCREMENT' && col.autoInc && !pgSerials.includes(col.type.toUpperCase())) {
+          mismatches.push({ table: t.name, column: col.name, type: 'AUTO_INCREMENT', bad });
+        }
+      });
+    });
+  });
+  return mismatches;
 }
 
 function renderAll(r) {
