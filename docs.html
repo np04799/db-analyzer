@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Documentation — DB Schema Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;--s1:#161B22;--s2:#1C2333;--s3:#21262D;
+  --ac:#2D8CFF;--ok:#3FB950;--cr:#F85149;--hi:#F0883E;--me:#D29922;--pv:#A371F7;
+  --tx:#E6EDF3;--t2:#8B949E;--t3:#6E7681;--b:#30363D;
+  --r:6px;--rl:10px;--tr:.15s ease;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6}
+
+/* HEADER */
+.hdr{background:var(--s1);border-bottom:1px solid var(--b);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx)}
+.hdr-brand svg{color:var(--ac)}
+.hdr-brand strong{font-size:15px}
+.hdr-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(45,140,255,.12);color:var(--ac);border:1px solid rgba(45,140,255,.2);font-weight:600}
+.hdr-nav{display:flex;align-items:center;gap:6px}
+.hdr-nav a{font-size:12px;color:var(--t2);text-decoration:none;padding:5px 10px;border-radius:var(--r);transition:all var(--tr)}
+.hdr-nav a:hover{color:var(--tx);background:var(--s2)}
+.hdr-nav .btn{background:var(--ac);color:#fff;font-weight:600}
+.hdr-nav .btn:hover{background:#1a7aef;color:#fff}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 52px);max-width:1400px;margin:0 auto}
+
+/* SIDEBAR */
+.sidebar{background:var(--s1);border-right:1px solid var(--b);padding:24px 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+.sidebar-section{margin-bottom:20px}
+.sidebar-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:0 16px;margin-bottom:6px}
+.sidebar a{display:block;padding:5px 16px;font-size:13px;color:var(--t2);text-decoration:none;border-left:2px solid transparent;transition:all var(--tr)}
+.sidebar a:hover{color:var(--tx);background:var(--s2);border-left-color:var(--ac)}
+.sidebar a.active{color:var(--ac);border-left-color:var(--ac);background:rgba(45,140,255,.06)}
+
+/* MAIN */
+.main{padding:36px 48px;max-width:960px}
+h1{font-size:28px;font-weight:700;color:var(--tx);margin-bottom:8px}
+h2{font-size:20px;font-weight:700;color:var(--tx);margin:40px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--b)}
+h3{font-size:15px;font-weight:700;color:var(--tx);margin:24px 0 10px}
+h4{font-size:13px;font-weight:700;color:var(--t2);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+p{font-size:14px;color:var(--t2);margin-bottom:12px;line-height:1.7}
+code{background:var(--s3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--ac);font-family:'SF Mono',Consolas,monospace}
+pre{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin:12px 0;overflow-x:auto}
+pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
+.subtitle{font-size:15px;color:var(--t2);margin-bottom:28px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.badge-ok{background:rgba(63,185,80,.08);color:var(--ok);border-color:rgba(63,185,80,.2)}
+.badge-cr{background:rgba(248,81,73,.08);color:var(--cr);border-color:rgba(248,81,73,.2)}
+.badge-hi{background:rgba(240,136,62,.08);color:var(--hi);border-color:rgba(240,136,62,.2)}
+.badge-me{background:rgba(210,153,34,.08);color:var(--me);border-color:rgba(210,153,34,.2)}
+.badge-lo{background:rgba(63,185,80,.06);color:var(--ok);border-color:rgba(63,185,80,.15)}
+.badge-ac{background:rgba(45,140,255,.08);color:var(--ac);border-color:rgba(45,140,255,.2)}
+.badge-pv{background:rgba(163,113,247,.08);color:var(--pv);border-color:rgba(163,113,247,.2)}
+
+/* RULE TABLE */
+.rule-table{width:100%;border-collapse:collapse;margin:10px 0 20px;font-size:13px}
+.rule-table th{text-align:left;padding:8px 12px;background:var(--s2);color:var(--t3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--b)}
+.rule-table td{padding:9px 12px;border-bottom:1px solid var(--b);color:var(--t2);vertical-align:top}
+.rule-table tr:last-child td{border-bottom:none}
+.rule-table tr:hover td{background:rgba(255,255,255,.02)}
+.rule-table td:first-child{font-weight:600;color:var(--tx);white-space:nowrap}
+.sev{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.sev-c{background:rgba(248,81,73,.12);color:var(--cr)}
+.sev-h{background:rgba(240,136,62,.12);color:var(--hi)}
+.sev-m{background:rgba(210,153,34,.12);color:var(--me)}
+.sev-l{background:rgba(63,185,80,.08);color:var(--ok)}
+
+/* PLATFORM GRID */
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.plat-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);padding:16px}
+.plat-card h4{color:var(--tx);text-transform:none;letter-spacing:0;font-size:14px;margin:0 0 4px}
+.plat-card .plat-sub{font-size:11px;color:var(--t3);margin-bottom:12px}
+.plat-card ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.plat-card ul li{font-size:12px;color:var(--t2);display:flex;align-items:flex-start;gap:6px}
+.plat-card ul li::before{content:'✗';color:var(--cr);font-size:11px;flex-shrink:0;margin-top:1px}
+.plat-card ul li.ok::before{content:'✓';color:var(--ok)}
+
+/* INFO BOX */
+.info-box{border-radius:var(--r);padding:14px 16px;margin:16px 0;font-size:13px;color:var(--t2);line-height:1.7}
+.info-box strong{display:block;margin-bottom:4px;font-size:13px}
+.info-box.blue{background:rgba(45,140,255,.06);border:1px solid rgba(45,140,255,.2)}
+.info-box.blue strong{color:var(--ac)}
+.info-box.green{background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.2)}
+.info-box.green strong{color:var(--ok)}
+.info-box.orange{background:rgba(240,136,62,.06);border:1px solid rgba(240,136,62,.2)}
+.info-box.orange strong{color:var(--hi)}
+
+/* SCORE GRID */
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.score-card{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px}
+.score-card .sc-pct{font-size:22px;font-weight:700;margin-bottom:2px}
+.score-card .sc-lbl{font-size:11px;color:var(--t3)}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--b);margin:32px 0}
+
+/* TOC */
+.toc{background:var(--s1);border:1px solid var(--b);border-radius:var(--rl);padding:18px 20px;margin-bottom:28px}
+.toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:10px}
+.toc ol{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.toc ol li a{font-size:13px;color:var(--ac);text-decoration:none}
+.toc ol li a:hover{text-decoration:underline}
+
+/* FOOTER */
+.ft{background:var(--s1);border-top:1px solid var(--b);padding:16px 28px;text-align:center;font-size:12px;color:var(--t3);margin-top:60px}
+.ft a{color:var(--ac);text-decoration:none}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <a href="/" class="hdr-brand">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    <strong>DB Schema Analyzer</strong>
+    <span class="hdr-badge">v1.0</span>
+  </a>
+  <nav class="hdr-nav">
+    <a href="/">← Back to Tool</a>
+    <a href="#rules">Rules</a>
+    <a href="#platforms">Platforms</a>
+    <a href="#scoring">Scoring</a>
+    <a href="/" class="btn">Launch Tool</a>
+  </nav>
+</header>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Getting Started</div>
+    <a href="#overview">Overview</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#quick-start">Quick Start</a>
+    <a href="#methodology">Methodology</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Rule Reference</div>
+    <a href="#rules">All Rules</a>
+    <a href="#integrity">Keys & Integrity</a>
+    <a href="#security">Security</a>
+    <a href="#normalization">Normalization</a>
+    <a href="#naming">Naming Conventions</a>
+    <a href="#relationships">Relationships</a>
+    <a href="#operational">Operational</a>
+    <a href="#performance">Performance</a>
+    <a href="#query">Query Analysis</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Platform Rules</div>
+    <a href="#platforms">Overview</a>
+    <a href="#plat-postgresql">PostgreSQL</a>
+    <a href="#plat-mysql">MySQL</a>
+    <a href="#plat-sqlserver">SQL Server</a>
+    <a href="#plat-oracle">Oracle</a>
+    <a href="#plat-sqlite">SQLite</a>
+    <a href="#plat-generic">Generic SQL</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Scoring</div>
+    <a href="#scoring">Health Score Formula</a>
+    <a href="#grades">Grade Scale</a>
+    <a href="#domain-weights">Domain Weights</a>
+    <a href="#penalties">Penalty Reference</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Reference</div>
+    <a href="#limitations">v1 Limitations</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <h1>DB Schema Analyzer Documentation</h1>
+    <p class="subtitle">Complete reference for all 40+ rules, platform-specific checks, scoring formula, and methodology.</p>
+
+    <div class="toc">
+      <div class="toc-title">On This Page</div>
+      <ol>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#rules">Rule Reference (40+ rules across 8 categories)</a></li>
+        <li><a href="#platforms">Platform-Specific Rules</a></li>
+        <li><a href="#scoring">Health Score Formula</a></li>
+        <li><a href="#limitations">v1 Limitations</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ol>
+    </div>
+
+    <div class="info-box blue">
+      <strong>Privacy First</strong>
+      All analysis runs entirely in your browser. No DDL, schema data, or query text is ever sent to any server. The tool works fully offline after the first page load.
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <h2>How It Works</h2>
+    <p>DB Schema Analyzer is a <strong>rule-based static linter for database schemas</strong>. It works the same way ESLint catches code bugs without running your program — by analysing the structure of your DDL without connecting to a live database.</p>
+
+    <h3>Analysis Pipeline</h3>
+    <pre><code>Your CREATE TABLE DDL
+       │
+       ▼
+  DDL Parser (extractTableBody + parseDDL)
+  ├── Balanced-paren body extraction
+  ├── Column name, type, constraints extracted
+  └── FK, PK, UNIQUE constraints detected
+       │
+       ▼
+  Rule Engine (runRules — 40+ rules)
+  ├── Per-table rules (R01–R27)
+  ├── Cross-table rules (relationships, isolation)
+  ├── Query rules (R41–R43, if queries submitted)
+  └── Platform mismatch rules (per selected platform)
+       │
+       ▼
+  Scoring Engine (scoreSecs + calcScore)
+  ├── Section scores (0–100 per category)
+  └── Weighted composite health score
+       │
+       ▼
+  Schema Intelligence (generateSchemaInsight)
+  ├── Single schema: domain mixing, future schema needs
+  └── Multi-schema: quality gaps, duplicate tables
+       │
+       ▼
+  Results: Issues · Summary · Solutions · Comparison · Roadmap · PDF</code></pre>
+
+    <h3 id="quick-start">Quick Start</h3>
+    <ol style="padding-left:20px;font-size:14px;color:var(--t2);display:flex;flex-direction:column;gap:8px;margin:10px 0">
+      <li>Open <a href="/" style="color:var(--ac)">https://db-analyzer-two.vercel.app</a></li>
+      <li>Describe your system in <strong>Step 1</strong> — industry, purpose, compliance needs</li>
+      <li>Select your <strong>database platform</strong> (PostgreSQL, MySQL, SQL Server, Oracle, SQLite, Generic SQL)</li>
+      <li>Paste <code>CREATE TABLE</code> statements in <strong>Step 2</strong>, or upload a <code>.sql</code> file</li>
+      <li>Optionally add SQL queries for query anti-pattern detection</li>
+      <li>Click <strong>Analyze Schema</strong></li>
+      <li>Review findings across Issues, Summary, Solutions, Comparison and Roadmap tabs</li>
+      <li>Export a full PDF report</li>
+    </ol>
+
+    <h3 id="methodology">Methodology</h3>
+    <p>Every rule is deterministic — it either fires or it doesn't. There is no probability score or AI inference. The DDL parser uses a <strong>balanced-parenthesis walker</strong> that correctly handles:</p>
+    <ul style="padding-left:20px;font-size:14px;color:var(--t2);display:flex;flex-direction:column;gap:6px;margin:10px 0">
+      <li>Nested function calls: <code>DEFAULT gen_random_uuid()</code>, <code>DEFAULT NOW()</code></li>
+      <li>Inline <code>REFERENCES table(id)</code> syntax</li>
+      <li>Quoted identifiers: <code>`name`</code>, <code>"name"</code>, <code>[name]</code></li>
+      <li><code>CREATE TABLE IF NOT EXISTS</code></li>
+      <li>Standalone <code>FOREIGN KEY ... REFERENCES</code> and <code>CONSTRAINT name ...</code> syntax</li>
+    </ul>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- RULE REFERENCE -->
+  <section id="rules">
+    <h2>Rule Reference</h2>
+    <p>40+ deterministic rules across 8 categories. Each finding includes a severity, root cause description, and ready-to-run SQL fix.</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <span class="badge badge-cr">🔴 Critical — fix before release</span>
+      <span class="badge badge-hi">🟠 High — fix this sprint</span>
+      <span class="badge badge-me">🟡 Medium — plan to fix</span>
+      <span class="badge badge-lo">🟢 Low — best practice</span>
+    </div>
+
+    <!-- INTEGRITY -->
+    <h3 id="integrity">🔑 Keys & Integrity</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>SQL Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Missing PRIMARY KEY</td><td><span class="sev sev-c">Critical</span></td><td>No PK constraint on table</td><td><code>ADD COLUMN id SERIAL PRIMARY KEY</code></td></tr>
+        <tr><td>FLOAT for monetary column</td><td><span class="sev sev-h">High</span></td><td>Column named price/amount/total/cost uses FLOAT or REAL</td><td><code>ALTER COLUMN price TYPE DECIMAL(12,2)</code></td></tr>
+        <tr><td>Missing UNIQUE on email</td><td><span class="sev sev-h">High</span></td><td>Email column exists without UNIQUE constraint</td><td><code>ADD CONSTRAINT uq_email UNIQUE (email)</code></td></tr>
+        <tr><td>DECIMAL without precision</td><td><span class="sev sev-m">Medium</span></td><td>DECIMAL/NUMERIC column has no explicit (p,s)</td><td><code>ALTER COLUMN amount TYPE DECIMAL(10,2)</code></td></tr>
+        <tr><td>Nullable key column</td><td><span class="sev sev-m">Medium</span></td><td>email, name, status, type column allows NULL</td><td><code>ALTER COLUMN col SET NOT NULL</code></td></tr>
+        <tr><td>Status/type as unconstrained VARCHAR</td><td><span class="sev sev-m">Medium</span></td><td>Column named status/type/state/role uses VARCHAR with no CHECK</td><td><code>ADD CONSTRAINT chk_status CHECK (status IN ('active','inactive'))</code></td></tr>
+        <tr><td>TEXT for bounded-length field</td><td><span class="sev sev-l">Low</span></td><td>email, name, phone column uses TEXT with no length limit</td><td><code>ALTER COLUMN email TYPE VARCHAR(255)</code></td></tr>
+        <tr><td>Empty table definition</td><td><span class="sev sev-c">Critical</span></td><td>No columns parsed from CREATE TABLE block</td><td>Review and resubmit DDL</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SECURITY -->
+    <h3 id="security">🛡 Security</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Plaintext password storage</td><td><span class="sev sev-c">Critical</span></td><td>Column named pwd/pass/password with VARCHAR &lt; 60 chars</td><td>Rename to <code>password_hash VARCHAR(255)</code>, enforce bcrypt/argon2</td></tr>
+        <tr><td>PII — SSN / NIN / passport</td><td><span class="sev sev-c">Critical</span></td><td>Column named ssn, sin, nin, passport, national_id</td><td>Encrypt with pgcrypto or column-level encryption</td></tr>
+        <tr><td>Payment card data</td><td><span class="sev sev-c">Critical</span></td><td>Column named card_number, cvv, card_cvv</td><td>Replace with payment token (Stripe/Braintree)</td></tr>
+        <tr><td>Plain token/secret storage</td><td><span class="sev sev-h">High</span></td><td>Column named token/api_key/secret/refresh_token uses TEXT/VARCHAR</td><td>Hash tokens before storage; encrypt secrets</td></tr>
+        <tr><td>Role as free-text VARCHAR</td><td><span class="sev sev-h">High</span></td><td>Column named role/permission uses unconstrained VARCHAR</td><td><code>ADD CONSTRAINT chk_role CHECK (role IN ('admin','user','viewer'))</code></td></tr>
+        <tr><td>No soft-delete on user table</td><td><span class="sev sev-m">Medium</span></td><td>users/accounts/employees table has no deleted_at column</td><td><code>ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL</code></td></tr>
+      </tbody>
+    </table>
+
+    <!-- NORMALIZATION -->
+    <h3 id="normalization">📐 Normalization</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Repeating column group (1NF)</td><td><span class="sev sev-h">High</span></td><td>Columns like addr1/addr2/addr3 or phone1/phone2</td><td>Extract to child table with FK back to parent</td></tr>
+        <tr><td>Comma-separated values in column (1NF)</td><td><span class="sev sev-h">High</span></td><td>Column named tags/categories/ids uses TEXT (implied multi-value)</td><td>Extract to junction table</td></tr>
+        <tr><td>Derived/computed column (3NF)</td><td><span class="sev sev-m">Medium</span></td><td>Column named total/balance/full_name/final_total</td><td>Remove or use generated/computed column</td></tr>
+        <tr><td>Wide table</td><td><span class="sev sev-m">Medium</span></td><td>Table has &gt;30 columns</td><td>Vertical partition into related child tables</td></tr>
+        <tr><td>Duplicate column semantics</td><td><span class="sev sev-m">Medium</span></td><td>total + final_total + amount all in same table</td><td>Remove redundant columns, pick one canonical name</td></tr>
+      </tbody>
+    </table>
+
+    <!-- NAMING -->
+    <h3 id="naming">✏️ Naming Conventions</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Reserved word as table name</td><td><span class="sev sev-h">High</span></td><td>Table named USER, ORDER, GROUP, INDEX, etc.</td><td><code>ALTER TABLE USER RENAME TO users</code></td></tr>
+        <tr><td>Reserved word as column name</td><td><span class="sev sev-m">Medium</span></td><td>Column named name, value, key, type, etc. in some platforms</td><td>Rename to descriptive alternative</td></tr>
+        <tr><td>ALLCAPS table name</td><td><span class="sev sev-m">Medium</span></td><td>Table name is all uppercase (legacy Oracle/DB2 style)</td><td><code>ALTER TABLE USERS RENAME TO users</code></td></tr>
+        <tr><td>Mixed naming conventions</td><td><span class="sev sev-m">Medium</span></td><td>Same table uses both snake_case and camelCase columns</td><td>Standardise to snake_case throughout</td></tr>
+        <tr><td>Cryptic column name</td><td><span class="sev sev-l">Low</span></td><td>Column name is ≤2 characters (e.g. a, nm, dt)</td><td>Rename to descriptive full name</td></tr>
+        <tr><td>Boolean not prefixed is_/has_/can_</td><td><span class="sev sev-l">Low</span></td><td>BOOLEAN column not prefixed with is_, has_, can_</td><td>Rename: <code>active → is_active</code>, <code>verified → is_verified</code></td></tr>
+        <tr><td>Inconsistent plural/singular</td><td><span class="sev sev-l">Low</span></td><td>Schema mixes singular (user) and plural (orders) table names</td><td>Standardise to plural throughout</td></tr>
+      </tbody>
+    </table>
+
+    <!-- RELATIONSHIPS -->
+    <h3 id="relationships">🔗 Relationships</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>_id column without FK constraint</td><td><span class="sev sev-h">High</span></td><td>Column ending in _id or _no has no FOREIGN KEY</td><td><code>ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id)</code></td></tr>
+        <tr><td>Missing FK index</td><td><span class="sev sev-h">High</span></td><td>FK column has no index</td><td><code>CREATE INDEX idx_t_col ON t(col)</code></td></tr>
+        <tr><td>Nullable FK without ON DELETE rule</td><td><span class="sev sev-m">Medium</span></td><td>FK column is nullable but no ON DELETE action defined</td><td>Add <code>ON DELETE SET NULL</code> or <code>ON DELETE CASCADE</code></td></tr>
+        <tr><td>Self-referencing FK not declared</td><td><span class="sev sev-m">Medium</span></td><td>Column named parent_id/manager_id with no FK to same table</td><td><code>ADD FOREIGN KEY (parent_id) REFERENCES categories(id)</code></td></tr>
+        <tr><td>Isolated table</td><td><span class="sev sev-m">Medium</span></td><td>Table has no FK relationships in or out</td><td>Review relationships in context of full schema</td></tr>
+        <tr><td>Junction table missing composite PK</td><td><span class="sev sev-m">Medium</span></td><td>Table with exactly 2 FK columns and no other columns has no composite PK</td><td><code>ADD PRIMARY KEY (user_id, role_id)</code></td></tr>
+      </tbody>
+    </table>
+
+    <!-- OPERATIONAL -->
+    <h3 id="operational">⚙️ Operational</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Missing created_at</td><td><span class="sev sev-m">Medium</span></td><td>No created_at or created_on timestamp column</td><td><code>ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()</code></td></tr>
+        <tr><td>Missing updated_at</td><td><span class="sev sev-l">Low</span></td><td>No updated_at or modified_at timestamp column</td><td><code>ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()</code> + trigger</td></tr>
+        <tr><td>Missing created_by / updated_by</td><td><span class="sev sev-l">Low</span></td><td>Transactional table has timestamps but no user traceability columns</td><td><code>ADD COLUMN created_by UUID REFERENCES users(id)</code></td></tr>
+        <tr><td>Single-column table</td><td><span class="sev sev-l">Low</span></td><td>Table has only 1 column</td><td>Review if table is incomplete or should merge with related table</td></tr>
+        <tr><td>Missing tenant_id in SaaS</td><td><span class="sev sev-h">High</span></td><td>SaaS domain detected but no tenant_id/org_id column on table</td><td><code>ADD COLUMN tenant_id UUID NOT NULL REFERENCES tenants(id)</code></td></tr>
+        <tr><td>No audit table in Healthcare/Finance</td><td><span class="sev sev-h">High</span></td><td>Regulated domain but no audit/log table detected</td><td>Create append-only audit log table</td></tr>
+      </tbody>
+    </table>
+
+    <!-- PERFORMANCE -->
+    <h3 id="performance">⚡ Performance & Indexing</h3>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>IP address as VARCHAR</td><td><span class="sev sev-l">Low</span></td><td>Column named ip/ip_address uses VARCHAR</td><td><code>ALTER COLUMN ip TYPE INET</code> (PostgreSQL)</td></tr>
+        <tr><td>CHAR(n) where n &gt; 4</td><td><span class="sev sev-l">Low</span></td><td>Fixed-width CHAR column wider than 4 chars</td><td><code>ALTER COLUMN col TYPE VARCHAR(n)</code></td></tr>
+        <tr><td>Missing index on email/username/slug</td><td><span class="sev sev-m">Medium</span></td><td>Column named email/username/slug has no UNIQUE index</td><td><code>CREATE UNIQUE INDEX idx_t_email ON t(email)</code></td></tr>
+        <tr><td>Missing index on status/type</td><td><span class="sev sev-l">Low</span></td><td>Column named status/type commonly used in WHERE — no index</td><td><code>CREATE INDEX idx_t_status ON t(status)</code></td></tr>
+      </tbody>
+    </table>
+
+    <!-- QUERY -->
+    <h3 id="query">🔍 Query Analysis</h3>
+    <div class="info-box blue">
+      <strong>Note</strong>
+      Query rules only apply when SQL queries are submitted in the Query Input field in Step 2. They do not affect the health score — they are informational findings.
+    </div>
+    <table class="rule-table">
+      <thead><tr><th>Rule</th><th>Severity</th><th>Trigger</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>SELECT * usage</td><td><span class="sev sev-m">Medium</span></td><td>Query uses SELECT * instead of named columns</td><td>Specify exact columns: <code>SELECT id, email, name FROM users</code></td></tr>
+        <tr><td>UPDATE/DELETE without WHERE</td><td><span class="sev sev-c">Critical</span></td><td>UPDATE or DELETE statement has no WHERE clause</td><td>Always add WHERE clause before executing</td></tr>
+        <tr><td>Implicit JOIN syntax</td><td><span class="sev sev-l">Low</span></td><td>Query uses comma-join: <code>FROM t1, t2 WHERE ...</code></td><td>Use explicit <code>JOIN ... ON ...</code> syntax</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- PLATFORM RULES -->
+  <section id="platforms">
+    <h2>Platform-Specific Rules</h2>
+    <p>When a database platform is selected in Step 1, the analyser checks for type incompatibilities between your DDL and the selected platform. A warning banner appears in the Summary tab if mismatches are found. <strong>This does not affect the health score</strong> — it is advisory only.</p>
+
+    <div class="info-box orange">
+      <strong>How platform selection works</strong>
+      Select your platform before entering DDL. The dropdown locks once DDL is entered. To change platform, clear all DDL first. <code>Generic SQL</code> disables platform-specific checks entirely.
+    </div>
+
+    <!-- POSTGRESQL -->
+    <h3 id="plat-postgresql">PostgreSQL</h3>
+    <p>The most feature-rich platform supported. Native to PostgreSQL — no warnings for these types.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+      <div class="plat-card">
+        <h4>✅ Native Types (no warnings)</h4>
+        <div class="plat-sub">These are valid PostgreSQL syntax</div>
+        <ul>
+          <li class="ok">SERIAL, BIGSERIAL, SMALLSERIAL</li>
+          <li class="ok">TIMESTAMPTZ, TIMESTAMP WITH TIME ZONE</li>
+          <li class="ok">JSONB, JSON</li>
+          <li class="ok">UUID, INET, CIDR, MACADDR</li>
+          <li class="ok">TSVECTOR, TSQUERY (full-text)</li>
+          <li class="ok">HSTORE, ARRAY types</li>
+          <li class="ok">INT4RANGE, INT8RANGE</li>
+        </ul>
+      </div>
+      <div class="plat-card">
+        <h4>⚠️ Incompatible Types (warning shown)</h4>
+        <div class="plat-sub">These belong to other platforms</div>
+        <ul>
+          <li>AUTO_INCREMENT → use SERIAL</li>
+          <li>NVARCHAR → use VARCHAR</li>
+          <li>DATETIME → use TIMESTAMPTZ</li>
+          <li>NUMBER → use NUMERIC/DECIMAL</li>
+          <li>VARCHAR2 → use VARCHAR</li>
+          <li>TINYINT → use SMALLINT</li>
+          <li>LONGTEXT / MEDIUMTEXT → use TEXT</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MYSQL -->
+    <h3 id="plat-mysql">MySQL / MariaDB</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+      <div class="plat-card">
+        <h4>✅ Native Types (no warnings)</h4>
+        <ul>
+          <li class="ok">AUTO_INCREMENT</li>
+          <li class="ok">TINYINT, MEDIUMINT</li>
+          <li class="ok">LONGTEXT, MEDIUMTEXT, TINYTEXT</li>
+          <li class="ok">ENUM, SET</li>
+          <li class="ok">YEAR</li>
+          <li class="ok">JSON (MySQL 5.7+)</li>
+        </ul>
+      </div>
+      <div class="plat-card">
+        <h4>⚠️ Incompatible Types (warning shown)</h4>
+        <ul>
+          <li>SERIAL → use AUTO_INCREMENT</li>
+          <li>BIGSERIAL → use BIGINT AUTO_INCREMENT</li>
+          <li>TIMESTAMPTZ → use DATETIME or TIMESTAMP</li>
+          <li>JSONB → use JSON</li>
+          <li>INET → use VARCHAR(45)</li>
+          <li>BOOLEAN → use TINYINT(1)</li>
+          <li>NVARCHAR → use VARCHAR with utf8mb4</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SQL SERVER -->
+    <h3 id="plat-sqlserver">Microsoft SQL Server</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+      <div class="plat-card">
+        <h4>✅ Native Types (no warnings)</h4>
+        <ul>
+          <li class="ok">NVARCHAR, NCHAR, NTEXT</li>
+          <li class="ok">DATETIME2, DATETIMEOFFSET</li>
+          <li class="ok">UNIQUEIDENTIFIER</li>
+          <li class="ok">MONEY, SMALLMONEY</li>
+          <li class="ok">BIT</li>
+          <li class="ok">IMAGE, ROWVERSION</li>
+        </ul>
+      </div>
+      <div class="plat-card">
+        <h4>⚠️ Incompatible Types (warning shown)</h4>
+        <ul>
+          <li>SERIAL → use IDENTITY(1,1)</li>
+          <li>BIGSERIAL → use BIGINT IDENTITY</li>
+          <li>AUTO_INCREMENT → use IDENTITY</li>
+          <li>TIMESTAMPTZ → use DATETIMEOFFSET</li>
+          <li>JSONB → use NVARCHAR(MAX) + JSON functions</li>
+          <li>INET → use VARCHAR(45)</li>
+          <li>BOOLEAN → use BIT</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ORACLE -->
+    <h3 id="plat-oracle">Oracle Database</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+      <div class="plat-card">
+        <h4>✅ Native Types (no warnings)</h4>
+        <ul>
+          <li class="ok">VARCHAR2, NVARCHAR2</li>
+          <li class="ok">NUMBER (replaces INT, DECIMAL, FLOAT)</li>
+          <li class="ok">CLOB, NCLOB, BLOB</li>
+          <li class="ok">RAW, ROWID, UROWID</li>
+          <li class="ok">DATE (includes time in Oracle)</li>
+        </ul>
+      </div>
+      <div class="plat-card">
+        <h4>⚠️ Incompatible Types (warning shown)</h4>
+        <ul>
+          <li>SERIAL → use SEQUENCE + TRIGGER</li>
+          <li>AUTO_INCREMENT → use GENERATED ALWAYS AS IDENTITY</li>
+          <li>BOOLEAN → use NUMBER(1) CHECK (col IN (0,1))</li>
+          <li>TIMESTAMPTZ → use TIMESTAMP WITH TIME ZONE</li>
+          <li>JSONB → use CLOB with IS JSON constraint</li>
+          <li>TINYINT → use NUMBER(3)</li>
+          <li>NVARCHAR → use NVARCHAR2</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SQLITE -->
+    <h3 id="plat-sqlite">SQLite</h3>
+    <div class="info-box orange">
+      <strong>SQLite Type Affinity</strong>
+      SQLite uses dynamic typing with 5 storage classes: NULL, INTEGER, REAL, TEXT, BLOB. Most type names are accepted but stored using affinity rules. The warnings below flag types that have no SQLite equivalent.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0">
+      <div class="plat-card">
+        <h4>✅ Native Types (no warnings)</h4>
+        <ul>
+          <li class="ok">INTEGER (auto-increment via ROWID)</li>
+          <li class="ok">REAL</li>
+          <li class="ok">TEXT</li>
+          <li class="ok">BLOB</li>
+          <li class="ok">NUMERIC</li>
+        </ul>
+      </div>
+      <div class="plat-card">
+        <h4>⚠️ Incompatible Types (warning shown)</h4>
+        <ul>
+          <li>SERIAL → use INTEGER PRIMARY KEY</li>
+          <li>BIGSERIAL → use INTEGER PRIMARY KEY</li>
+          <li>TIMESTAMPTZ → use TEXT (ISO 8601) or INTEGER (Unix epoch)</li>
+          <li>JSONB → use TEXT</li>
+          <li>INET → use TEXT</li>
+          <li>UUID → use TEXT or BLOB</li>
+          <li>BOOLEAN → use INTEGER (0/1)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- GENERIC SQL -->
+    <h3 id="plat-generic">Generic SQL</h3>
+    <div class="info-box green">
+      <strong>No platform warnings</strong>
+      Selecting Generic SQL disables all platform-specific type checks. Use this when your DDL is written for multiple platforms or when the target platform is not yet decided. All 40+ schema rules still apply.
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- SCORING -->
+  <section id="scoring">
+    <h2>Health Score Formula</h2>
+
+    <h3>Step 1 — Section Score</h3>
+    <p>Each of the 6 scored sections starts at 100 and deducts penalty points per finding:</p>
+    <pre><code>Section Score = max(0, 100 − Σ(penalty × domain_multiplier))</code></pre>
+
+    <h3 id="penalties">Penalty Reference</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0">
+      <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--cr)">−15</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">Critical</div>
+      </div>
+      <div style="background:rgba(240,136,62,.08);border:1px solid rgba(240,136,62,.2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--hi)">−8</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">High</div>
+      </div>
+      <div style="background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--me)">−4</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">Medium</div>
+      </div>
+      <div style="background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.15);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--ok)">−1</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">Low</div>
+      </div>
+    </div>
+
+    <h3>Step 2 — Weighted Composite Score</h3>
+    <pre><code>Health Score =
+  (Keys & Integrity    × 0.25) +
+  (Normalization       × 0.20) +
+  (Schema & Arch       × 0.20) +
+  (Security            × 0.15) +
+  (Indexing & Perf     × 0.10) +
+  (Relationships       × 0.10)</code></pre>
+
+    <div style="margin:16px 0">
+      <table class="rule-table">
+        <thead><tr><th>Section</th><th>Weight</th><th>Categories Included</th></tr></thead>
+        <tbody>
+          <tr><td>Keys & Integrity</td><td><strong>25%</strong></td><td>Integrity</td></tr>
+          <tr><td>Normalization</td><td><strong>20%</strong></td><td>Normalization</td></tr>
+          <tr><td>Schema & Architecture</td><td><strong>20%</strong></td><td>Architecture, Naming, Operational</td></tr>
+          <tr><td>Security</td><td><strong>15%</strong></td><td>Security</td></tr>
+          <tr><td>Indexing & Performance</td><td><strong>10%</strong></td><td>Indexing, Performance</td></tr>
+          <tr><td>Relationships</td><td><strong>10%</strong></td><td>Relationships</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box blue">
+      <strong>Note</strong>
+      Query Analysis findings are shown in the Issues tab but do not contribute to the health score. They are informational only.
+    </div>
+
+    <h3 id="grades">Grade Scale</h3>
+    <div class="score-grid">
+      <div class="score-card"><div class="sc-pct" style="color:var(--ok)">A — 90–100</div><div class="sc-lbl">Excellent — production ready</div></div>
+      <div class="score-card"><div class="sc-pct" style="color:#4ac26b">B — 80–89</div><div class="sc-lbl">Good — minor improvements needed</div></div>
+      <div class="score-card"><div class="sc-pct" style="color:var(--me)">C — 70–79</div><div class="sc-lbl">Fair — notable issues to address</div></div>
+      <div class="score-card"><div class="sc-pct" style="color:var(--hi)">D — 60–69</div><div class="sc-lbl">Poor — significant problems</div></div>
+      <div class="score-card"><div class="sc-pct" style="color:var(--cr)">F — 0–59</div><div class="sc-lbl">Critical — unsafe to scale</div></div>
+    </div>
+
+    <h3 id="domain-weights">Domain Multipliers</h3>
+    <p>When a business domain is detected from the overview text, penalties in relevant categories are multiplied:</p>
+    <table class="rule-table">
+      <thead><tr><th>Domain</th><th>Category</th><th>Multiplier</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2">Healthcare</td><td>Security</td><td><strong>2×</strong></td><td>HIPAA — PHI protection is critical</td></tr>
+        <tr><td>Integrity</td><td><strong>1.5×</strong></td><td>Patient data accuracy is life-critical</td></tr>
+        <tr><td rowspan="3">Finance</td><td>Integrity</td><td><strong>2×</strong></td><td>Financial data must be exact</td></tr>
+        <tr><td>Security</td><td><strong>1.8×</strong></td><td>PCI-DSS and financial regulations</td></tr>
+        <tr><td>Performance</td><td><strong>1.3×</strong></td><td>Transaction throughput requirements</td></tr>
+        <tr><td rowspan="3">E-commerce</td><td>Performance</td><td><strong>1.5×</strong></td><td>Order processing speed matters</td></tr>
+        <tr><td>Integrity</td><td><strong>1.5×</strong></td><td>Order and inventory accuracy</td></tr>
+        <tr><td>Indexing</td><td><strong>1.4×</strong></td><td>Product search performance</td></tr>
+        <tr><td rowspan="2">SaaS</td><td>Relationships</td><td><strong>1.4×</strong></td><td>Multi-tenant data isolation</td></tr>
+        <tr><td>Performance</td><td><strong>1.3×</strong></td><td>Concurrent user scalability</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- LIMITATIONS -->
+  <section id="limitations">
+    <h2>v1 Limitations</h2>
+    <div class="info-box orange">
+      <strong>Static analysis only</strong>
+      DB Schema Analyzer v1 analyses DDL structure only. It does not connect to a live database and cannot inspect actual data.
+    </div>
+    <table class="rule-table">
+      <thead><tr><th>Limitation</th><th>Detail</th><th>Planned in v2</th></tr></thead>
+      <tbody>
+        <tr><td>No live DB connection</td><td>Schema submitted as DDL text only</td><td>✅ Direct PostgreSQL/MySQL connection</td></tr>
+        <tr><td>No data profiling</td><td>Cannot see null rates, cardinality, or row counts</td><td>✅ Null rate + cardinality analysis</td></tr>
+        <tr><td>No query execution plan</td><td>Index analysis is structural, not query-workload based</td><td>✅ Slow query log integration</td></tr>
+        <tr><td>No stored procedures/triggers</td><td>Parser handles CREATE TABLE only</td><td>✅ Extended DDL parsing</td></tr>
+        <tr><td>No views</td><td>CREATE VIEW statements are ignored</td><td>✅ View dependency analysis</td></tr>
+        <tr><td>No business logic validation</td><td>Cannot verify constraints match actual requirements</td><td>—</td></tr>
+        <tr><td>Cross-database FKs</td><td>Cannot validate FKs across different databases</td><td>✅ Schema registry</td></tr>
+        <tr><td>No schema history</td><td>No diff between schema versions</td><td>✅ Schema history + diff tool</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <h2>FAQ</h2>
+
+    <h3>Is my DDL sent to a server?</h3>
+    <p>No. All analysis runs entirely in your browser using JavaScript. No DDL, query text, or schema data is transmitted to any server at any point. The tool works fully offline after the first page load.</p>
+
+    <h3>How accurate are the findings?</h3>
+    <p>Every rule is deterministic — it either fires or it doesn't. There is no AI inference or probability scoring. However, some rules rely on naming conventions (e.g. detecting PII from column names like <code>ssn</code>). If your column names are non-standard, some findings may not fire. Conversely, if you use generic names for non-PII columns (e.g. a column named <code>ssn</code> that stores something else), you may see false positives.</p>
+
+    <h3>Why doesn't the platform dropdown affect my score?</h3>
+    <p>Platform mismatch warnings are advisory only — they don't affect the health score. This is intentional: a schema that uses PostgreSQL types is not inherently worse than one using MySQL types. The warning tells you there's a mismatch between your DDL and selected platform so you can investigate, but doesn't penalise you for it.</p>
+
+    <h3>Can I analyse multiple schemas?</h3>
+    <p>Yes — up to 5 schemas can be submitted simultaneously. The Comparison tab shows a side-by-side health score breakdown. All schemas share the same platform selection.</p>
+
+    <h3>What SQL dialects are supported?</h3>
+    <p>The parser is designed for ANSI SQL with support for PostgreSQL, MySQL, SQL Server, Oracle, and SQLite syntax. <code>CREATE TABLE IF NOT EXISTS</code>, inline <code>REFERENCES</code>, <code>CONSTRAINT name</code> syntax, and function calls in <code>DEFAULT</code> values are all handled correctly.</p>
+
+    <h3>How do I improve my score?</h3>
+    <p>Fix Critical findings first — each Critical costs 15 points from its section. Focus on high-weight sections: Keys & Integrity (25%) and Normalization (20%) have the most impact on your overall score. The Solutions tab provides a prioritised fix list with ready-to-run SQL.</p>
+  </section>
+
+  <div class="divider"></div>
+  <p style="font-size:12px;color:var(--t3);text-align:center">DB Schema Analyzer v1.0 · Rule-based static schema analysis · <a href="/" style="color:var(--ac)">Launch Tool →</a></p>
+
+</main>
+</div>
+
+<footer class="ft">
+  DB Schema Analyzer v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted &nbsp;·&nbsp; <a href="/">← Back to Tool</a>
+</footer>
+
+<script>
+// Sidebar active link on scroll
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.sidebar a');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) cur = s.id; });
+  links.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+  });
+}, { passive: true });
+</script>
+</body>
+</html>
