@@ -60,6 +60,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .hiw-arr{color:var(--b2);font-size:16px;flex-shrink:0;padding:0 2px}
 @media(max-width:700px){.hiw{display:none}}
 
+/* ER DIAGRAM */
+.diag-wrap{position:relative;overflow:hidden;background:var(--s2);border-radius:var(--rl);border:1px solid var(--b);cursor:grab;user-select:none}
+.diag-wrap.grabbing{cursor:grabbing}
+.diag-canvas{transform-origin:0 0;transition:none}
+.diag-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.diag-btn{padding:5px 12px;border-radius:var(--r);border:1px solid var(--b);background:var(--s2);color:var(--t2);font-size:12px;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;gap:5px}
+.diag-btn:hover{border-color:var(--ac);color:var(--ac)}
+.diag-btn.active{border-color:var(--ac);color:var(--ac);background:var(--acbg)}
+.diag-info{font-size:11px;color:var(--t3);margin-left:auto}
+.diag-minimap{position:absolute;bottom:12px;right:12px;background:var(--s1);border:1px solid var(--b);border-radius:var(--r);overflow:hidden;opacity:.85}
+.diag-cluster-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-bottom:6px}
+
 /* HEADER */
 .hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 20px;gap:10px}
 .hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);text-decoration:none}
@@ -459,6 +471,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
             <button onclick="loadSample('healthcare')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">🏥 Healthcare</button>
             <button onclick="loadSample('saas')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">☁️ SaaS</button>
             <button onclick="loadSample('legacy')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">⚠️ Legacy ERP</button>
+            <button onclick="loadSample('bad')" title="Intentionally bad schema — triggers 20+ rules. Use for demo or testing." style="padding:4px 9px;border-radius:5px;border:1px dashed rgba(248,81,73,.4);background:transparent;color:var(--cr);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--cr)';this.style.background='rgba(248,81,73,.08)'" onmouseout="this.style.borderColor='rgba(248,81,73,.4)';this.style.background='transparent'">💀 Badly Designed</button>
           </div>
         </div>
 <div class="scc" id="scCards"></div>
@@ -575,6 +588,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
         <button class="tb" data-tp="tsol" onclick="swTab('tsol',this)">💡 Solutions <span class="tbd" id="solBdg" style="background:rgba(45,140,255,.2);color:var(--ac)">0</span></button>
         <button class="tb" data-tp="tc" onclick="swTab('tc',this)" id="cmpTab">🔀 Comparison</button>
         <button class="tb" data-tp="tr" onclick="swTab('tr',this)">📅 Roadmap</button>
+        <button class="tb" data-tp="tdiag" onclick="swTab('tdiag',this)" id="diagTab">📊 ER Diagram</button>
       </div>
       <div class="tp ac" id="ti">
         <div class="ffs">
@@ -590,6 +604,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
       <div class="tp" id="tsol"><div id="solC"></div></div>
       <div class="tp" id="tc"><div id="cmpC"></div></div>
       <div class="tp" id="tr"><div id="rmC"></div></div>
+      <div class="tp" id="tdiag"><div id="diagC"></div></div>
     </div>
 
   </main>
@@ -1109,8 +1124,9 @@ function goto(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smo
 // Tab render registry — maps tab id to its render function
 // Add any tab here that needs a fresh render on every activation
 const TAB_RENDERERS = {
-  ts:   (r) => renderSummaryTab(r),
-  tc:   (r) => renderComparisonTab(r),
+  ts:    (r) => renderSummaryTab(r),
+  tc:    (r) => renderComparisonTab(r),
+  tdiag: (r) => renderDiagramTab(r),
 };
 
 function swTab(tp, btn) {
@@ -1505,6 +1521,375 @@ function detectPlatformMismatch(tables, platform) {
   return mismatches;
 }
 
+
+// ═══════════════════════════════════════════════════════
+// ER DIAGRAM ENGINE — Pure SVG, Option A
+// ═══════════════════════════════════════════════════════
+
+function buildERDiagram(r) {
+  const tables = r.allT;
+  const count = tables.length;
+
+  // ── CONSTANTS ──────────────────────────────────────────
+  const COL_H = 22, HDR_H = 32, PAD = 16, MIN_W = 180, MAX_W = 260;
+  const SCHEMA_COLORS = ['#2D8CFF','#3FB950','#A371F7','#F0883E','#D29922'];
+
+  // ── SCHEMA COLOUR MAP ──────────────────────────────────
+  const schemaNames = [...new Set(tables.map(t => t.schemaName || 'default'))];
+  const schemaColor = {};
+  schemaNames.forEach((s, i) => { schemaColor[s] = SCHEMA_COLORS[i % SCHEMA_COLORS.length]; });
+
+  // ── TABLE BOX DIMENSIONS ──────────────────────────────
+  const tboxes = tables.map(t => {
+    const w = Math.min(MAX_W, Math.max(MIN_W, t.name.length * 9 + PAD * 2));
+    const h = HDR_H + t.columns.length * COL_H + 8;
+    return { ...t, w, h, x: 0, y: 0 };
+  });
+
+  // ── BUILD FK EDGE LIST ─────────────────────────────────
+  const edges = [];
+  tboxes.forEach(t => {
+    (t.constraints?.fks || []).forEach(fk => {
+      const target = tboxes.find(tb => tb.name.toLowerCase() === fk.ref.toLowerCase());
+      if (target) edges.push({ from: t, to: target, col: fk.col });
+    });
+  });
+
+  // ── LAYOUT ─────────────────────────────────────────────
+  if (count <= 20) {
+    layoutSugiyama(tboxes, edges);
+  } else if (count <= 50) {
+    layoutSugiyama(tboxes, edges);
+    // Zoom/pan handles the rest
+  } else {
+    layoutClusters(tboxes, edges, schemaColor);
+  }
+
+  // ── SVG DIMENSIONS ─────────────────────────────────────
+  const margin = 40;
+  const maxX = Math.max(...tboxes.map(t => t.x + t.w)) + margin;
+  const maxY = Math.max(...tboxes.map(t => t.y + t.h)) + margin;
+  const svgW = Math.max(maxX, 600), svgH = Math.max(maxY, 400);
+
+  // ── RENDER SVG ─────────────────────────────────────────
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#0D1117;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">`;
+
+  // Defs — arrowhead marker
+  svg += `<defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#30363D"/>
+    </marker>
+    <marker id="arrow-pk" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#2D8CFF"/>
+    </marker>
+    ${schemaNames.map((s,i) => `<marker id="arrow-${i}" markerWidth="8" markerHeight="8" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="${schemaColor[s]}88"/>
+    </marker>`).join('')}
+  </defs>`;
+
+  // Draw FK edges first (behind tables)
+  edges.forEach(e => {
+    const fx = e.from.x + e.from.w / 2;
+    const fy = e.from.y + HDR_H + (e.from.columns.findIndex(c => c.name === e.col) + 0.5) * COL_H + 4;
+    const tx = e.to.x + e.to.w / 2;
+    const ty = e.to.y + HDR_H / 2;
+    const schIdx = schemaNames.indexOf(e.from.schemaName || 'default');
+    const col = schemaColor[e.from.schemaName || 'default'] + '88';
+
+    // Orthogonal path
+    const mx = (fx + tx) / 2;
+    svg += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}"
+      fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="none"
+      marker-end="url(#arrow-${schIdx})" opacity="0.7"/>`;
+  });
+
+  // Draw table boxes
+  tboxes.forEach(t => {
+    const col = schemaColor[t.schemaName || 'default'];
+    const { x, y, w, h } = t;
+    const hasFk = edges.some(e => e.from.name === t.name || e.to.name === t.name);
+
+    // Table box shadow
+    svg += `<rect x="${x+3}" y="${y+3}" width="${w}" height="${h}" rx="8" fill="#000000" opacity="0.3"/>`;
+
+    // Table box background
+    svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8"
+      fill="#161B22" stroke="${hasFk ? col : '#30363D'}" stroke-width="${hasFk ? 1.5 : 1}"/>`;
+
+    // Header background
+    svg += `<rect x="${x}" y="${y}" width="${w}" height="${HDR_H}" rx="8" fill="${col}22"/>`;
+    svg += `<rect x="${x}" y="${y+HDR_H-8}" width="${w}" height="8" fill="${col}22"/>`;
+
+    // Schema dot
+    if (schemaNames.length > 1) {
+      svg += `<circle cx="${x+12}" cy="${y+HDR_H/2}" r="4" fill="${col}"/>`;
+    }
+    // Table name
+    const nameX = schemaNames.length > 1 ? x + 22 : x + PAD;
+    svg += `<text x="${nameX}" y="${y+HDR_H/2+5}" font-size="13" font-weight="700"
+      fill="${col}" font-family="-apple-system,sans-serif">${esc2(t.name)}</text>`;
+
+    // Column count badge
+    svg += `<text x="${x+w-PAD}" y="${y+HDR_H/2+4}" font-size="9" fill="${col}88"
+      text-anchor="end" font-family="-apple-system,sans-serif">${t.columns.length} cols</text>`;
+
+    // Divider
+    svg += `<line x1="${x}" y1="${y+HDR_H}" x2="${x+w}" y2="${y+HDR_H}" stroke="#30363D" stroke-width="1"/>`;
+
+    // Columns
+    t.columns.forEach((col2, i) => {
+      const cy = y + HDR_H + i * COL_H + 4;
+      const isPK = col2.hasPK || t.constraints?.pk && i === 0 && col2.name === 'id';
+      const isFK = (t.constraints?.fks || []).some(f => f.col === col2.name);
+      const isUniq = col2.hasUnique || (t.constraints?.uniques || []).includes(col2.name);
+
+      // Row hover bg (alternating)
+      if (i % 2 === 0) {
+        svg += `<rect x="${x+1}" y="${cy}" width="${w-2}" height="${COL_H}"
+          fill="#FFFFFF" opacity="0.02" rx="0"/>`;
+      }
+
+      // Icon
+      let icon = '', iconCol = '#6E7681';
+      if (isPK)   { icon = '🔑'; iconCol = '#D29922'; }
+      else if (isFK)  { icon = '🔗'; iconCol = col; }
+      else if (isUniq){ icon = '◈';  iconCol = '#3FB950'; }
+
+      if (icon && icon !== '◈') {
+        svg += `<text x="${x+8}" y="${cy+COL_H/2+4}" font-size="10"
+          font-family="-apple-system,sans-serif">${icon}</text>`;
+      } else if (icon === '◈') {
+        svg += `<text x="${x+8}" y="${cy+COL_H/2+4}" font-size="11" fill="${iconCol}"
+          font-family="-apple-system,sans-serif">◈</text>`;
+      } else {
+        svg += `<circle cx="${x+11}" cy="${cy+COL_H/2}" r="2" fill="#30363D"/>`;
+      }
+
+      // Column name
+      const nameColor = isPK ? '#D29922' : isFK ? col : '#8B949E';
+      const maxNameLen = Math.floor((w - 80) / 7);
+      const colName = col2.name.length > maxNameLen ? col2.name.substring(0, maxNameLen) + '…' : col2.name;
+      svg += `<text x="${x+22}" y="${cy+COL_H/2+4}" font-size="11" fill="${nameColor}"
+        font-family="-apple-system,sans-serif">${esc2(colName)}</text>`;
+
+      // Column type
+      const typeStr = (col2.type || '').toUpperCase().replace(/\(.+\)/, '').substring(0, 12);
+      svg += `<text x="${x+w-PAD}" y="${cy+COL_H/2+4}" font-size="9" fill="#6E7681"
+        text-anchor="end" font-family="-apple-system,sans-serif">${esc2(typeStr)}</text>`;
+
+      // Bottom divider (thin)
+      if (i < t.columns.length - 1) {
+        svg += `<line x1="${x+PAD}" y1="${cy+COL_H}" x2="${x+w-PAD}" y2="${cy+COL_H}"
+          stroke="#21262D" stroke-width="0.5"/>`;
+      }
+    });
+  });
+
+  svg += '</svg>';
+  return { svg, svgW, svgH, count };
+}
+
+// ── Simple esc for SVG text ───────────────────────────────────────────────
+function esc2(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SUGIYAMA LAYERED LAYOUT ───────────────────────────────────────────────
+function layoutSugiyama(tboxes, edges) {
+  const GAP_X = 40, GAP_Y = 60;
+
+  // Step 1: assign layers (topological sort via in-degree)
+  const nameMap = {};
+  tboxes.forEach(t => nameMap[t.name] = t);
+
+  const inDegree = {};
+  tboxes.forEach(t => inDegree[t.name] = 0);
+  edges.forEach(e => { if (inDegree[e.to.name] !== undefined) inDegree[e.to.name]++; });
+
+  const layers = [];
+  let remaining = [...tboxes];
+  let assigned = new Set();
+
+  while (remaining.length > 0) {
+    const layer = remaining.filter(t => inDegree[t.name] === 0 && !assigned.has(t.name));
+    if (layer.length === 0) {
+      // Cycle — just add remaining
+      layers.push(remaining.filter(t => !assigned.has(t.name)));
+      break;
+    }
+    layers.push(layer);
+    layer.forEach(t => {
+      assigned.add(t.name);
+      edges.filter(e => e.from.name === t.name).forEach(e => {
+        if (inDegree[e.to.name] !== undefined) inDegree[e.to.name]--;
+      });
+    });
+    remaining = remaining.filter(t => !assigned.has(t.name));
+  }
+
+  // Step 2: assign x/y coordinates
+  let yOff = 40;
+  layers.forEach(layer => {
+    const totalW = layer.reduce((s, t) => s + t.w, 0) + (layer.length - 1) * GAP_X;
+    let xOff = 40;
+    // Center each layer
+    layer.forEach(t => {
+      t.x = xOff;
+      t.y = yOff;
+      xOff += t.w + GAP_X;
+    });
+    yOff += Math.max(...layer.map(t => t.h)) + GAP_Y;
+  });
+}
+
+// ── CLUSTER LAYOUT (51+ tables) ───────────────────────────────────────────
+function layoutClusters(tboxes, edges, schemaColor) {
+  // Group by schemaName, lay out each schema cluster in a grid
+  const groups = {};
+  tboxes.forEach(t => {
+    const k = t.schemaName || 'default';
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(t);
+  });
+
+  let gx = 40, gy = 40;
+  Object.entries(groups).forEach(([schema, tables]) => {
+    const COLS = Math.ceil(Math.sqrt(tables.length));
+    tables.forEach((t, i) => {
+      const col = i % COLS, row = Math.floor(i / COLS);
+      t.x = gx + col * (t.w + 30);
+      t.y = gy + row * (t.h + 40);
+    });
+    const maxX = Math.max(...tables.map(t => t.x + t.w));
+    const maxY = Math.max(...tables.map(t => t.y + t.h));
+    gx = maxX + 80;
+    if (gx > 1600) { gx = 40; gy = maxY + 80; }
+  });
+}
+
+// ── RENDER DIAGRAM TAB ────────────────────────────────────────────────────
+function renderDiagramTab(r) {
+  const diagC = document.getElementById('diagC');
+  if (!diagC) return;
+  if (!r || !r.allT || r.allT.length === 0) {
+    diagC.innerHTML = '<div class="sk"><span style="font-size:18px;opacity:.5">📊</span><div><strong>ER Diagram</strong> — Run an analysis first to generate the diagram.</div></div>';
+    return;
+  }
+
+  const { svg, svgW, svgH, count } = buildERDiagram(r);
+  const viewH = Math.min(600, Math.max(400, window.innerHeight - 200));
+
+  let modeNote = count <= 20
+    ? `<span style="color:var(--ok)">Full diagram</span>`
+    : count <= 50
+    ? `<span style="color:var(--me)">Full diagram — use zoom/pan for large schema</span>`
+    : `<span style="color:var(--hi)">Cluster view — ${count} tables grouped by schema</span>`;
+
+  diagC.innerHTML = `
+    <div class="rs ex" style="margin-bottom:10px">
+      <div class="rsh2" style="cursor:default">
+        <span class="ri">📊</span>
+        <span class="rt">ER Diagram — ${r.allT.length} table${r.allT.length>1?'s':''} · ${r.srs.length} schema${r.srs.length>1?'s':''}</span>
+      </div>
+      <div class="rbd" style="padding:14px">
+        <div class="diag-toolbar">
+          <button class="diag-btn" onclick="diagZoom(1.2)" title="Zoom in">＋ Zoom In</button>
+          <button class="diag-btn" onclick="diagZoom(0.8)" title="Zoom out">－ Zoom Out</button>
+          <button class="diag-btn" onclick="diagReset()" title="Reset view">⟳ Reset</button>
+          <button class="diag-btn" onclick="diagDownload('svg')" title="Download SVG">⬇ SVG</button>
+          <button class="diag-btn" onclick="diagDownload('png')" title="Download PNG">⬇ PNG</button>
+          <span class="diag-info">${modeNote} · Drag to pan · Scroll to zoom</span>
+        </div>
+        <div class="diag-wrap" id="diagWrap" style="height:${viewH}px">
+          <div class="diag-canvas" id="diagCanvas" style="padding:20px">${svg}</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Store original SVG for download
+  window._diagSVG = svg;
+  window._diagSVGW = svgW;
+  window._diagSVGH = svgH;
+
+  // Init pan/zoom
+  initDiagPanZoom();
+}
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────
+let _diagScale = 1, _diagOffX = 0, _diagOffY = 0, _diagDragging = false, _diagLast = null;
+
+function initDiagPanZoom() {
+  const wrap = document.getElementById('diagWrap');
+  const canvas = document.getElementById('diagCanvas');
+  if (!wrap || !canvas) return;
+  _diagScale = 1; _diagOffX = 0; _diagOffY = 0;
+
+  wrap.onmousedown = (e) => {
+    _diagDragging = true; _diagLast = { x: e.clientX, y: e.clientY };
+    wrap.classList.add('grabbing');
+  };
+  window.onmouseup = () => { _diagDragging = false; wrap.classList.remove('grabbing'); };
+  wrap.onmousemove = (e) => {
+    if (!_diagDragging) return;
+    _diagOffX += e.clientX - _diagLast.x;
+    _diagOffY += e.clientY - _diagLast.y;
+    _diagLast = { x: e.clientX, y: e.clientY };
+    _applyDiagTransform();
+  };
+  wrap.onwheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    _diagScale = Math.max(0.2, Math.min(3, _diagScale * delta));
+    _applyDiagTransform();
+  };
+}
+
+function _applyDiagTransform() {
+  const canvas = document.getElementById('diagCanvas');
+  if (canvas) canvas.style.transform = `translate(${_diagOffX}px,${_diagOffY}px) scale(${_diagScale})`;
+}
+
+function diagZoom(factor) {
+  _diagScale = Math.max(0.2, Math.min(3, _diagScale * factor));
+  _applyDiagTransform();
+}
+
+function diagReset() {
+  _diagScale = 1; _diagOffX = 0; _diagOffY = 0;
+  _applyDiagTransform();
+}
+
+function diagDownload(fmt) {
+  if (!window._diagSVG) return;
+  const svgBlob = new Blob([window._diagSVG], { type: 'image/svg+xml' });
+  if (fmt === 'svg') {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(svgBlob);
+    a.download = 'er_diagram.svg';
+    a.click();
+    return;
+  }
+  // PNG via canvas
+  const img = new Image();
+  const url = URL.createObjectURL(svgBlob);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = window._diagSVGW * 2;
+    canvas.height = window._diagSVGH * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0D1117';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'er_diagram.png';
+    a.click();
+  };
+  img.src = url;
+}
+
 function renderAll(r) {
   // Score strip
   const scoreHintHTML = `<div class="score-hint-wrap"><i class="score-hint-icon">ⓘ<div class="score-hint-pop"><div class="score-hint-arrow"></div><h4>How the Health Score is calculated</h4><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span><strong>Base:</strong> 100 minus penalties per issue</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--cr)"></div><span>Critical = −15 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--hi)"></div><span>High = −8 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--me)"></div><span>Medium = −4 pts each</span></div><div class="score-hint-row"><div class="score-hint-dot" style="background:var(--lo)"></div><span>Low = −1 pt each</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--b);font-size:10px;color:var(--t3)"><strong style="color:var(--t2)">Section weights:</strong> Keys &amp; Integrity 25% · Normalization 20% · Schema 20% · Security 15% · Indexing 10% · Relationships 10%<br><br><strong style="color:var(--t2)">Grades:</strong> A ≥90 · B ≥80 · C ≥70 · D ≥60 · F &lt;60</div></div></i></div>`;
@@ -1547,6 +1932,7 @@ function renderAll(r) {
   document.getElementById('rmC').innerHTML = qBlock + `<div class="rmp">${r.roadmap.map(p => `<div class="rph"><div class="rphh" style="background:${p.color}18;border-bottom:1px solid ${p.color}33"><div class="rpn" style="background:${p.color}22;color:${p.color}">${p.phase}</div><span class="rptt">${esc(p.title)}</span><span class="rptm">🕐 ${esc(p.timeline)}</span></div>${p.items.length ? `<div class="rpis">${p.items.map(i => `<div class="rpi">${esc(i)}</div>`).join('')}</div>` : `<div class="rpis"><div style="font-size:11px;color:var(--t3);padding:4px 0">No items in this phase ✓</div></div>`}</div>`).join('')}</div><div class="sk" style="margin-top:12px"><span style="font-size:16px;opacity:.5">🔒</span><div><strong>Data Profiling Analysis</strong> — Reserved for v2. Will include null rates, cardinality analysis, dead column detection, and query workload profiling.</div></div>`;
 
   renderSolutionsTab(r);
+  renderDiagramTab(r);
 
   document.getElementById('res').classList.add('on');
   setTimeout(() => document.getElementById('res').scrollIntoView({ behavior: 'smooth' }), 100);
@@ -1955,6 +2341,56 @@ const SAMPLES = {
 
   saas: `CREATE TABLE tenants (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  slug VARCHAR(100) UNIQUE NOT NULL,\n  plan VARCHAR(50) DEFAULT 'free',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  email VARCHAR(255) NOT NULL,\n  password_hash VARCHAR(255) NOT NULL,\n  role VARCHAR(50) DEFAULT 'member',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE projects (\n  id UUID PRIMARY KEY,\n  tenant_id UUID,\n  name VARCHAR(255),\n  owner_id UUID,\n  created_at TIMESTAMPTZ\n);\n\nCREATE TABLE tasks (\n  id UUID PRIMARY KEY,\n  project_id UUID,\n  title VARCHAR(255),\n  assignee_id UUID,\n  status VARCHAR(50),\n  due_date DATE,\n  created_at TIMESTAMPTZ\n);`,
 
+  bad: `CREATE TABLE USER (
+  id INT,
+  NAME VARCHAR(255),
+  pwd VARCHAR(20),
+  EMAIL VARCHAR(255),
+  ssn VARCHAR(11),
+  card_number VARCHAR(16),
+  api_key TEXT,
+  role VARCHAR(50),
+  addr TEXT, addr2 TEXT, addr3 TEXT,
+  ph1 VARCHAR(20), ph2 VARCHAR(20), ph3 VARCHAR(20),
+  total FLOAT,
+  balance FLOAT,
+  final_total FLOAT,
+  is_deleted INT
+);
+
+CREATE TABLE ORDER (
+  id INT,
+  usr INT,
+  STATUS VARCHAR(50),
+  AMT FLOAT,
+  TAX FLOAT,
+  DISCOUNT FLOAT,
+  FINAL_AMT FLOAT,
+  notes TEXT,
+  created DATETIME
+);
+
+CREATE TABLE ITEMS (
+  id INT,
+  ord INT,
+  nm VARCHAR(500),
+  pr FLOAT,
+  q INT,
+  tot FLOAT,
+  tags TEXT
+);
+
+CREATE TABLE p (
+  a INT,
+  b VARCHAR(100),
+  c FLOAT,
+  d TEXT,
+  e INT,
+  f VARCHAR(50),
+  g VARCHAR(50),
+  h VARCHAR(50)
+);`,
+
   legacy: `CREATE TABLE CUST_MST (\n  CUST_NO CHAR(10),\n  CUST_NM VARCHAR(60),\n  CUST_ADD1 VARCHAR(80),\n  CUST_ADD2 VARCHAR(80),\n  PH1 VARCHAR(20),\n  PH2 VARCHAR(20),\n  FAX VARCHAR(20),\n  CUST_STAT CHAR(1),\n  CR_LIM NUMERIC(12,2),\n  FLAG1 CHAR(1),\n  FLAG2 CHAR(1)\n);\n\nCREATE TABLE ORD_HDR (\n  ORD_NO CHAR(12),\n  CUST_NO CHAR(10),\n  ORD_DT DATE,\n  ORD_STAT CHAR(2),\n  ORD_TOT NUMERIC(14,2),\n  INV_NO CHAR(12)\n);\n\nCREATE TABLE ORD_DTL (\n  ORD_NO CHAR(12),\n  LN_NO SMALLINT,\n  PART_NO CHAR(15),\n  QTY_ORD NUMERIC(8,2),\n  QTY_SHIP NUMERIC(8,2),\n  UNIT_PRC NUMERIC(10,4),\n  EXT_AMT NUMERIC(12,2)\n);`
 };
 
@@ -1962,7 +2398,18 @@ function loadSample(key) {
   const sc = schemas[0];
   if (!sc) return;
   sc.ddl = SAMPLES[key];
-  sc.name = {ecommerce:'E-commerce',healthcare:'Healthcare',saas:'SaaS Platform',legacy:'Legacy ERP'}[key] || key;
+  sc.name = {ecommerce:'E-commerce',healthcare:'Healthcare',saas:'SaaS Platform',legacy:'Legacy ERP',bad:'Bad Design Demo'}[key] || key;
+  const overviews = {
+    ecommerce:  'E-commerce platform for online retail. Manages products, orders, payments and customer accounts.',
+    healthcare: 'Hospital patient management system. Handles patient records, appointments, prescriptions and billing. HIPAA-regulated.',
+    saas:       'Multi-tenant SaaS project management platform for teams. Subscription-based, GDPR-compliant.',
+    legacy:     'Legacy ERP system for manufacturing. Handles customers, orders and inventory.',
+    bad:        'E-commerce platform for online orders and payments. Handles customer PII and financial transactions.',
+  };
+  const biz = document.getElementById('biz');
+  if (biz && overviews[key]) { biz.value = overviews[key]; biz.dispatchEvent(new Event('input',{bubbles:true})); }
+  const gp = document.getElementById('globalPlatform');
+  if (key === 'bad' && gp && !gp.disabled) { gp.value = 'Generic SQL'; updateGlobalPlatform('Generic SQL'); }
   renderSchemas();
   checkPlatformLock();
 }
