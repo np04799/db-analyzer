@@ -472,6 +472,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
             <button onclick="loadSample('saas')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">☁️ SaaS</button>
             <button onclick="loadSample('legacy')" style="padding:4px 9px;border-radius:5px;border:1px dashed var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--ac)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">⚠️ Legacy ERP</button>
             <button onclick="loadSample('bad')" title="Intentionally bad schema — triggers 20+ rules. Use for demo or testing." style="padding:4px 9px;border-radius:5px;border:1px dashed rgba(248,81,73,.4);background:transparent;color:var(--cr);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--cr)';this.style.background='rgba(248,81,73,.08)'" onmouseout="this.style.borderColor='rgba(248,81,73,.4)';this.style.background='transparent'">💀 Badly Designed</button>
+            <button onclick="loadSample('multi')" title="Two schemas: well-designed Auth Service vs poorly designed Billing Service. Tests Comparison tab and Schema Intelligence." style="padding:4px 9px;border-radius:5px;border:1px dashed rgba(163,113,247,.4);background:transparent;color:var(--pv);cursor:pointer;font-size:11px;transition:all var(--tr)" onmouseover="this.style.borderColor='var(--pv)';this.style.background='rgba(163,113,247,.08)'" onmouseout="this.style.borderColor='rgba(163,113,247,.4)';this.style.background='transparent'">🔀 Multi-Schema</button>
           </div>
         </div>
 <div class="scc" id="scCards"></div>
@@ -1547,11 +1548,36 @@ function buildERDiagram(r) {
   });
 
   // ── BUILD FK EDGE LIST ─────────────────────────────────
+  const tableNameMap = {};
+  tboxes.forEach(t => { tableNameMap[t.name.toLowerCase()] = t; });
   const edges = [];
+  const edgeKeys = new Set();
+
+  // Explicit FKs from parsed constraints
   tboxes.forEach(t => {
     (t.constraints?.fks || []).forEach(fk => {
-      const target = tboxes.find(tb => tb.name.toLowerCase() === fk.ref.toLowerCase());
-      if (target) edges.push({ from: t, to: target, col: fk.col });
+      const target = tableNameMap[fk.ref.toLowerCase()];
+      const key = `${t.name}:${fk.ref}`;
+      if (target && !edgeKeys.has(key)) {
+        edges.push({ from: t, to: target, col: fk.col, inferred: false });
+        edgeKeys.add(key);
+      }
+    });
+  });
+
+  // Inferred FKs — col ends in _id and stripped name matches a table
+  tboxes.forEach(t => {
+    t.columns.forEach(col => {
+      const nm = col.name.toLowerCase();
+      if (!nm.endsWith('_id') || nm === 'id') return;
+      const candidate = nm.slice(0, -3);
+      const target = tableNameMap[candidate] || tableNameMap[candidate + 's'];
+      if (!target || target.name === t.name) return;
+      const key = `${t.name}:${target.name}`;
+      if (!edgeKeys.has(key)) {
+        edges.push({ from: t, to: target, col: col.name, inferred: true });
+        edgeKeys.add(key);
+      }
     });
   });
 
@@ -1596,11 +1622,17 @@ function buildERDiagram(r) {
     const schIdx = schemaNames.indexOf(e.from.schemaName || 'default');
     const col = schemaColor[e.from.schemaName || 'default'] + '88';
 
-    // Orthogonal path
+    // Solid for explicit FKs, dashed for inferred
     const mx = (fx + tx) / 2;
+    const dash = e.inferred ? '5,4' : 'none';
+    const edgeOpacity = e.inferred ? '0.45' : '0.75';
+    const strokeW = e.inferred ? '1.2' : '1.8';
     svg += `<path d="M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}"
-      fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="none"
-      marker-end="url(#arrow-${schIdx})" opacity="0.7"/>`;
+      fill="none" stroke="${col}" stroke-width="${strokeW}" stroke-dasharray="${dash}"
+      marker-end="url(#arrow-${schIdx})" opacity="${edgeOpacity}"/>`;
+    svg += `<text x="${(fx+tx)/2}" y="${(fy+ty)/2-5}" font-size="9" fill="${col}"
+      opacity="${e.inferred ? '0.35' : '0.55'}" text-anchor="middle"
+      font-family="-apple-system,sans-serif" style="pointer-events:none">${esc2(e.col)}</text>`;
   });
 
   // Draw table boxes
@@ -1799,6 +1831,10 @@ function renderDiagramTab(r) {
           <button class="diag-btn" onclick="diagDownload('svg')" title="Download SVG">⬇ SVG</button>
           <button class="diag-btn" onclick="diagDownload('png')" title="Download PNG">⬇ PNG</button>
           <span class="diag-info">${modeNote} · Drag to pan · Scroll to zoom</span>
+          <span style="display:flex;align-items:center;gap:10px;font-size:10px;color:var(--t3);margin-left:6px;flex-shrink:0">
+            <span style="display:flex;align-items:center;gap:4px"><svg width="22" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="16" y2="4" stroke="#2D8CFF" stroke-width="1.8"/><polygon points="14,1 18,4 14,7" fill="#2D8CFF"/></svg>Explicit FK</span>
+            <span style="display:flex;align-items:center;gap:4px"><svg width="22" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="16" y2="4" stroke="#2D8CFF" stroke-width="1.2" stroke-dasharray="4,3"/><polygon points="14,1 18,4 14,7" fill="#2D8CFF" opacity="0.5"/></svg>Inferred FK</span>
+          </span>
         </div>
         <div class="diag-wrap" id="diagWrap" style="height:${viewH}px">
           <div class="diag-canvas" id="diagCanvas" style="padding:20px">${svg}</div>
@@ -2335,11 +2371,91 @@ function buildPDF(r) {
 
 // SAMPLE SCHEMAS
 const SAMPLES = {
-  ecommerce: `CREATE TABLE users (\n  id INT,\n  Name VARCHAR(255),\n  EMAIL VARCHAR(255),\n  pwd VARCHAR(50),\n  created DATETIME,\n  addr TEXT, addr2 TEXT,\n  phone VARCHAR(20), phone2 VARCHAR(20),\n  is_deleted INT DEFAULT 0\n);\n\nCREATE TABLE orders (\n  order_id INT PRIMARY KEY,\n  user INT,\n  status VARCHAR(50),\n  total FLOAT,\n  discount FLOAT,\n  tax FLOAT,\n  final_total FLOAT,\n  notes TEXT,\n  created DATETIME\n);\n\nCREATE TABLE order_items (\n  id INT PRIMARY KEY,\n  order_id INT,\n  product_id INT,\n  qty INT,\n  price FLOAT,\n  total FLOAT\n);\n\nCREATE TABLE products (\n  product_id INT PRIMARY KEY,\n  name VARCHAR(500),\n  price FLOAT,\n  sale_price FLOAT,\n  category VARCHAR(100),\n  is_active INT DEFAULT 1,\n  image_url TEXT,\n  image_url2 TEXT,\n  image_url3 TEXT\n);`,
+  ecommerce: `CREATE TABLE users (
+  id INT,
+  Name VARCHAR(255),
+  EMAIL VARCHAR(255),
+  pwd VARCHAR(50),
+  created DATETIME,
+  addr TEXT, addr2 TEXT,
+  phone VARCHAR(20), phone2 VARCHAR(20),
+  is_deleted INT DEFAULT 0
+);
+
+CREATE TABLE products (
+  product_id INT PRIMARY KEY,
+  name VARCHAR(500),
+  price FLOAT,
+  sale_price FLOAT,
+  category VARCHAR(100),
+  is_active INT DEFAULT 1,
+  image_url TEXT,
+  image_url2 TEXT,
+  image_url3 TEXT
+);
+
+CREATE TABLE orders (
+  order_id INT PRIMARY KEY,
+  user INT REFERENCES users(id),
+  status VARCHAR(50),
+  total FLOAT,
+  discount FLOAT,
+  tax FLOAT,
+  final_total FLOAT,
+  notes TEXT,
+  created DATETIME
+);
+
+CREATE TABLE order_items (
+  id INT PRIMARY KEY,
+  order_id INT REFERENCES orders(order_id),
+  product_id INT REFERENCES products(product_id),
+  qty INT,
+  price FLOAT,
+  total FLOAT
+);`,
 
   healthcare: `CREATE TABLE patient (\n  patient_id INT PRIMARY KEY,\n  first_name VARCHAR(100),\n  last_name VARCHAR(100),\n  dob DATE,\n  ssn VARCHAR(11),\n  address VARCHAR(500),\n  insurance_number VARCHAR(50),\n  allergies TEXT\n);\n\nCREATE TABLE appointment (\n  id INT PRIMARY KEY,\n  patient INT,\n  doctor INT,\n  date DATETIME,\n  type VARCHAR(100),\n  status VARCHAR(50)\n);\n\nCREATE TABLE prescription (\n  id INT,\n  patient_id INT,\n  drug VARCHAR(200),\n  dosage VARCHAR(100),\n  start_date DATE,\n  end_date DATE\n);\n\nCREATE TABLE billing (\n  bill_id INT PRIMARY KEY,\n  patient_id INT,\n  amount FLOAT,\n  paid FLOAT,\n  balance FLOAT,\n  status VARCHAR(50)\n);`,
 
-  saas: `CREATE TABLE tenants (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  slug VARCHAR(100) UNIQUE NOT NULL,\n  plan VARCHAR(50) DEFAULT 'free',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  email VARCHAR(255) NOT NULL,\n  password_hash VARCHAR(255) NOT NULL,\n  role VARCHAR(50) DEFAULT 'member',\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE TABLE projects (\n  id UUID PRIMARY KEY,\n  tenant_id UUID,\n  name VARCHAR(255),\n  owner_id UUID,\n  created_at TIMESTAMPTZ\n);\n\nCREATE TABLE tasks (\n  id UUID PRIMARY KEY,\n  project_id UUID,\n  title VARCHAR(255),\n  assignee_id UUID,\n  status VARCHAR(50),\n  due_date DATE,\n  created_at TIMESTAMPTZ\n);`,
+  saas: `CREATE TABLE tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(100) UNIQUE NOT NULL,
+  plan VARCHAR(50) NOT NULL DEFAULT 'free',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL DEFAULT 'member',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  owner_id UUID NOT NULL REFERENCES users(id),
+  name VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  assignee_id UUID REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'todo',
+  due_date DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`,
 
   bad: `CREATE TABLE USER (
   id INT,
@@ -2391,10 +2507,109 @@ CREATE TABLE p (
   h VARCHAR(50)
 );`,
 
-  legacy: `CREATE TABLE CUST_MST (\n  CUST_NO CHAR(10),\n  CUST_NM VARCHAR(60),\n  CUST_ADD1 VARCHAR(80),\n  CUST_ADD2 VARCHAR(80),\n  PH1 VARCHAR(20),\n  PH2 VARCHAR(20),\n  FAX VARCHAR(20),\n  CUST_STAT CHAR(1),\n  CR_LIM NUMERIC(12,2),\n  FLAG1 CHAR(1),\n  FLAG2 CHAR(1)\n);\n\nCREATE TABLE ORD_HDR (\n  ORD_NO CHAR(12),\n  CUST_NO CHAR(10),\n  ORD_DT DATE,\n  ORD_STAT CHAR(2),\n  ORD_TOT NUMERIC(14,2),\n  INV_NO CHAR(12)\n);\n\nCREATE TABLE ORD_DTL (\n  ORD_NO CHAR(12),\n  LN_NO SMALLINT,\n  PART_NO CHAR(15),\n  QTY_ORD NUMERIC(8,2),\n  QTY_SHIP NUMERIC(8,2),\n  UNIT_PRC NUMERIC(10,4),\n  EXT_AMT NUMERIC(12,2)\n);`
+  legacy: `CREATE TABLE CUST_MST (\n  CUST_NO CHAR(10),\n  CUST_NM VARCHAR(60),\n  CUST_ADD1 VARCHAR(80),\n  CUST_ADD2 VARCHAR(80),\n  PH1 VARCHAR(20),\n  PH2 VARCHAR(20),\n  FAX VARCHAR(20),\n  CUST_STAT CHAR(1),\n  CR_LIM NUMERIC(12,2),\n  FLAG1 CHAR(1),\n  FLAG2 CHAR(1)\n);\n\nCREATE TABLE ORD_HDR (\n  ORD_NO CHAR(12),\n  CUST_NO CHAR(10),\n  ORD_DT DATE,\n  ORD_STAT CHAR(2),\n  ORD_TOT NUMERIC(14,2),\n  INV_NO CHAR(12)\n);\n\nCREATE TABLE ORD_DTL (\n  ORD_NO CHAR(12),\n  LN_NO SMALLINT,\n  PART_NO CHAR(15),\n  QTY_ORD NUMERIC(8,2),\n  QTY_SHIP NUMERIC(8,2),\n  UNIT_PRC NUMERIC(10,4),\n  EXT_AMT NUMERIC(12,2)\n);`,
+
+  // Multi-schema Auth Service — well designed (should score A)
+  multi_auth: `CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name VARCHAR(255) NOT NULL,
+  is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE user_roles (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, role_id)
+);
+
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE password_reset_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`,
+
+  // Multi-schema Billing Service — intentionally weaker (should score C/D)
+  multi_billing: `CREATE TABLE PLAN (
+  id INT,
+  name VARCHAR(100),
+  price FLOAT,
+  billing_cycle VARCHAR(20),
+  features TEXT
+);
+
+CREATE TABLE subscription (
+  id INT,
+  user_id VARCHAR(50),
+  plan INT,
+  STATUS VARCHAR(20),
+  started DATETIME,
+  ended DATETIME,
+  auto_renew INT DEFAULT 1
+);
+
+CREATE TABLE invoice (
+  id INT,
+  sub_id INT,
+  AMT FLOAT,
+  TAX FLOAT,
+  TOTAL FLOAT,
+  due_date DATETIME,
+  paid_date DATETIME,
+  STATUS VARCHAR(20)
+);
+
+CREATE TABLE payment (
+  id INT,
+  invoice INT,
+  card_number VARCHAR(16),
+  card_exp VARCHAR(7),
+  amount FLOAT,
+  gateway_ref TEXT,
+  created DATETIME
+);`
 };
 
 function loadSample(key) {
+  // Multi-schema sample: loads two schemas simultaneously
+  if (key === 'multi') {
+    schemas = []; scCtr = 0;
+    addSchema('', 'Auth Service');
+    addSchema('', 'Billing Service');
+    schemas[0].ddl = SAMPLES.multi_auth;
+    schemas[1].ddl = SAMPLES.multi_billing;
+    const biz = document.getElementById('biz');
+    if (biz) { biz.value = 'Multi-service SaaS platform. Auth service handles user identity and sessions. Billing service manages subscriptions and payments.'; biz.dispatchEvent(new Event('input',{bubbles:true})); }
+    const gp = document.getElementById('globalPlatform');
+    if (gp && !gp.disabled) { gp.value = 'PostgreSQL'; updateGlobalPlatform('PostgreSQL'); }
+    renderSchemas(); checkPlatformLock(); return;
+  }
   const sc = schemas[0];
   if (!sc) return;
   sc.ddl = SAMPLES[key];
