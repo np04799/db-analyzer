@@ -1,95 +1,102 @@
-# DB Schema Analyzer — v1.0
+# DB Schema Analyzer
 
-> A free, privacy-first database design review tool. Paste your DDL and get an instant scored report with actionable SQL fixes — no account, no uploads, no data leaves your browser.
+**Browser-based database schema linter and health checker.**
+Paste `CREATE TABLE` DDL → get instant findings, health score, ER diagram, and SQL fixes.
 
-🔗 **Live:** https://db-analyzer-two.vercel.app/
-📦 **Repo:** https://github.com/np04799/db-analyzer
-
----
-
-## What It Does
-
-DB Schema Analyzer runs 40+ deterministic rules against your `CREATE TABLE` DDL and produces a structured report covering:
-
-- **Keys & Integrity** — missing PKs, FK constraints, UNIQUE on email, data type correctness
-- **Normalization** — 1NF repeating groups, 3NF derived columns, wide table detection
-- **Security** — plaintext passwords, unencrypted PII (SSN, NIN), raw card numbers, token storage
-- **Naming** — reserved words as table/column names, ALLCAPS, mixed conventions, cryptic names
-- **Relationships** — missing FK constraints on `_id` columns, isolated tables
-- **Indexing** — missing indexes on all FK columns
-- **Query Analysis** — `SELECT *`, `UPDATE/DELETE` without `WHERE`, implicit JOIN syntax
-- **Schema Intelligence** — recommends schema splits, flags quality gaps, suggests future schemas
+🔗 **Live tool:** https://db-analyzer-two.vercel.app/
+📖 **Documentation:** https://db-analyzer-two.vercel.app/docs.html
 
 ---
 
-## Quick Start
+## Features
 
-1. Open **https://db-analyzer-two.vercel.app/**
-2. Read the **"What is DB Schema Analyzer?"** overview and steps
-3. Describe your system in **Step 1** and select your database platform
-4. Paste `CREATE TABLE` statements in **Step 2** (or upload a `.sql` / `.txt` / `.ddl` file)
-5. Click **Analyze Schema**
-6. Review results across Issues, Summary, Solutions, Comparison, and Roadmap tabs
-7. Click **Export PDF Report** to download a full analysis document
-
-No login required. Works completely offline after first load.
+- **50+ deterministic rules** across 8 categories — no AI, no guessing
+- **Health score (A–F)** with domain-aware weighting (Healthcare, Finance, E-commerce, SaaS)
+- **ER Diagram** — pure SVG, Sugiyama layout, explicit + inferred FK relationships, zoom/pan, SVG/PNG download
+- **Platform mismatch detection** — PostgreSQL, MySQL, SQL Server, Oracle, SQLite, Generic SQL
+- **Multi-schema support** — up to 5 schemas, side-by-side Comparison tab
+- **Schema Intelligence** — split/merge recommendations, domain mixing detection
+- **PDF export** — 9-section stakeholder report including About This Analysis page
+- **Query anti-pattern detection** — SELECT *, UPDATE without WHERE, implicit JOINs
+- **SQL fix suggestions** — every finding includes a ready-to-run ALTER TABLE fix
+- **Zero backend** — 100% client-side, no data ever leaves the browser
 
 ---
 
-## Page Layout
+## Rule Categories
+
+| Category | Rules | Highlights |
+|----------|-------|-----------|
+| Keys & Integrity | 9 | Missing PK, FLOAT for money, DECIMAL without precision |
+| Security | 6 | Plaintext passwords, PII (SSN/NIN), card numbers, tokens |
+| Normalization | 4 | 1NF (repeating groups, comma-separated values), 3NF |
+| Naming Conventions | 7 | Reserved words, ALLCAPS, boolean prefix, cryptic names |
+| Relationships | 6 | Missing FKs, nullable FK no ON DELETE, self-ref FK, junction PK |
+| Operational | 6 | Missing timestamps, tenant_id (SaaS), audit table (Healthcare/Finance) |
+| Performance | 4 | IP as VARCHAR, missing indexes on FK/email/status columns |
+| Query Analysis | 3 | SELECT *, UPDATE without WHERE, implicit JOIN |
+
+---
+
+## Sample Schemas
+
+| Sample | Description | Expected Score |
+|--------|-------------|----------------|
+| 🛒 E-commerce | 4 tables with FK relationships | ~70/C |
+| 🏥 Healthcare | Patient records, HIPAA-relevant | ~75/C |
+| ☁️ SaaS Platform | Multi-tenant with explicit FKs | ~85/B |
+| ⚠️ Legacy ERP | ALLCAPS, missing constraints | ~60/D |
+| 💀 Badly Designed | 49 findings, all categories triggered | ~52/F |
+| 🔀 Multi-Schema | Auth (92/A) vs Billing (62/D) side-by-side | Varies |
+
+---
+
+## Tech Stack
+
+- **Frontend:** Vanilla HTML5 / CSS3 / JavaScript (ES6+) — single file
+- **PDF:** jsPDF 2.5.1 (CDN)
+- **Hosting:** Vercel Static (auto-deploy from `main`)
+- **Build:** None — no build step, no framework, no backend
+
+---
+
+## Repository Structure
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Header — DB Schema Analyzer  v1.0  Rule Engine  Privacy │
-├─────────────────────────────────────────────────────────┤
-│     What is DB Schema Analyzer?  (overview strip)        │
-│     ① Business Overview → ② Schemas → ③ Analyze         │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│   Step 1 — Business Overview                             │
-│   Step 2 — Schemas & Queries                             │
-│   Step 3 — Analysis Options + Results                    │
-│                                                          │
-├─────────────────────────────────────────────────────────┤
-│  How It Works  (5-step horizontal pipeline)              │
-├─────────────────────────────────────────────────────────┤
-│  Footer — What It Analyzes · Supported Platforms         │
-└─────────────────────────────────────────────────────────┘
+├── index.html          # Entire application (HTML + CSS + JS)
+├── docs.html           # Documentation site
+├── vercel.json         # Routing config (serves docs.html directly)
+├── assets/
+│   └── DB_Schema_Analyzer_Presentations.zip
+└── docs/
+    ├── README.md
+    ├── ARCHITECTURE.md
+    ├── CHANGELOG.md
+    ├── DEPLOYMENT.md
+    ├── PDF_REPORT.md
+    ├── ROADMAP.md
+    ├── RULE_ENGINE.md
+    └── SCORING.md
 ```
 
 ---
 
 ## Documentation
 
-| File | Description |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, tech stack, module breakdown |
-| [docs/RULE_ENGINE.md](docs/RULE_ENGINE.md) | All 40+ rules with descriptions and examples |
-| [docs/SCORING.md](docs/SCORING.md) | How the health score is calculated |
-| [docs/PDF_REPORT.md](docs/PDF_REPORT.md) | PDF report structure and all 9 sections |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel deployment guide |
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Version history and release notes |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | v2 planned features |
+| File | Contents |
+|------|----------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, parser, rule engine, tab system |
+| [RULE_ENGINE.md](RULE_ENGINE.md) | All 50+ rules with severity and fix reference |
+| [SCORING.md](SCORING.md) | Health score formula, weights, domain multipliers |
+| [PDF_REPORT.md](PDF_REPORT.md) | PDF export structure and section reference |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [ROADMAP.md](ROADMAP.md) | Planned features and monetisation strategy |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Vercel deployment and GitHub workflow |
 
 ---
 
-## Tech Stack
+## Privacy
 
-| Layer | Technology |
-|---|---|
-| Frontend | Vanilla HTML5, CSS3, JavaScript (ES6+) |
-| PDF Export | jsPDF 2.5.1 (CDN) |
-| Hosting | Vercel Static |
-| Build | None — single HTML file, no bundler |
-
----
-
-## Supported Platforms
-
-PostgreSQL · MySQL · SQL Server · Oracle · SQLite · Generic SQL
-
----
-
-## License
-
-Internal use — v1. Not for public distribution.
+No schema data, DDL, or query text is ever sent to any server.
+All analysis runs synchronously in the browser via JavaScript.
+The tool works fully offline after the first page load.
