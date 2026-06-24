@@ -1,140 +1,168 @@
-# Rule Engine — DB Schema Analyzer v1.0
+# Rule Engine — DB Schema Analyzer
 
-The rule engine runs **40+ deterministic checks** against parsed DDL. Rules are grouped into categories, each mapped to a report section and scoring dimension.
+## Overview
 
----
+The rule engine runs 50+ deterministic rules across 8 categories against parsed DDL.
+Every rule is a static check — no AI, no probability. Each finding either fires or it doesn't.
 
-## Rule Categories & Weights
+## Architecture
 
-| Category | Section | Score Weight |
-|---|---|---|
-| Integrity | Keys & Integrity | 25% |
-| Normalization | Normalization | 20% |
-| Architecture, Naming, Operational | Schema & Architecture | 20% |
-| Security | Security | 15% |
-| Indexing, Performance | Indexing & Performance | 10% |
-| Relationships | Relationships | 10% |
-| Query | Query Analysis | — (informational) |
-
----
-
-## Schema Rules (R01–R27)
-
-### Integrity
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R01 | 🔴 Critical | Missing PRIMARY KEY on table | `ALTER TABLE t ADD COLUMN id SERIAL PRIMARY KEY` |
-| R02 | 🔴 Critical | Empty table definition (no columns parsed) | Review and resubmit DDL |
-| R14 | 🟠 High | FLOAT/REAL/DOUBLE used for monetary column | `ALTER TABLE t ALTER COLUMN price TYPE DECIMAL(12,2)` |
-| R19 | 🟠 High | Missing UNIQUE constraint on email column | `ALTER TABLE t ADD CONSTRAINT uq_t_email UNIQUE (email)` |
-| R22 | 🟡 Medium | NULL allowed on key column (email, name, status, type) | `ALTER TABLE t ALTER COLUMN col SET NOT NULL` |
-
-### Security
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R15 | 🔴 Critical | Password column shorter than 60 chars (plaintext risk) | Rename to `password_hash VARCHAR(255)`, enforce bcrypt/argon2 |
-| R16 | 🔴 Critical | PII column: ssn, sin, nin, passport, national_id, tax_id | Encrypt with pgcrypto or column-level encryption |
-| R17 | 🔴 Critical | Payment card column: card_number, cvv, card_cvv | Replace with payment token (Stripe/Braintree) |
-| R23 | 🟠 High | Token/secret column stored in plain TEXT/VARCHAR | Hash validation tokens; encrypt refresh tokens |
-
-### Naming
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R03 | 🟠 High | Reserved SQL word used as table name | `ALTER TABLE t RENAME TO t_data` |
-| R07 | 🟡 Medium | ALLCAPS table name (legacy Oracle/DB2 style) | `ALTER TABLE T RENAME TO t` |
-| R08 | 🟡 Medium | Mixed snake_case and camelCase in same table | Standardise to snake_case |
-| R12 | 🟡 Medium | Reserved SQL word used as column name | `ALTER TABLE t RENAME COLUMN col TO col_value` |
-| R13 | 🟢 Low | Column name ≤2 chars (cryptic) | Rename to descriptive name |
-
-### Normalization
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R20 | 🟠 High | Repeating column group: addr1, addr2, addr3 (1NF violation) | Extract to child table |
-| R21 | 🟡 Medium | Derived/computed column: total, balance, full_name, final_total | Remove or use generated column |
-| R04 | 🟡 Medium | Wide table (>30 columns) | Vertical partition into related tables |
-
-### Operational
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R05 | 🟡 Medium | Missing `created_at` timestamp | `ALTER TABLE t ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` |
-| R06 | 🟢 Low | Missing `updated_at` timestamp | Add column + trigger |
-| R09 | 🟢 Low | Single-column table | Review if table is incomplete or should merge |
-| R10 | 🟢 Low | No soft-delete on user/customer/employee table | `ALTER TABLE t ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL` |
-
-### Relationships
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R11 | 🟠 High | FK column has no index | `CREATE INDEX idx_t_col ON t(col)` |
-| R18 | 🟠 High | `_id` / `_no` column without FK constraint | Add `FOREIGN KEY (col) REFERENCES ref_table(id)` |
-| R26 | 🟡 Medium | Table has no FK relationships in or out (isolated) | Review relationships in context of full schema |
-
-### Architecture
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R27 | 🟡 Medium | Business overview domain doesn't match schema tables | Submit complete schema or clarify overview |
-
-### Performance / Indexing
-
-| Rule | Severity | Trigger | Fix |
-|---|---|---|---|
-| R24 | 🟢 Low | IP address stored as VARCHAR | `ALTER TABLE t ALTER COLUMN ip TYPE INET USING ip::INET` |
-| R25 | 🟢 Low | CHAR(n>4) where VARCHAR preferred | `ALTER TABLE t ALTER COLUMN col TYPE VARCHAR(n)` |
-
----
-
-## Query Rules (R41–R43)
-
-Query rules fire only when SQL queries are submitted in the Query Input field.
-
-| Rule | Severity | Trigger | Example |
-|---|---|---|---|
-| R41 | 🟡 Medium | `SELECT *` in query | `SELECT * FROM users` → specify columns |
-| R42 | 🔴 Critical | `UPDATE` or `DELETE` without `WHERE` | `DELETE FROM users` → always add WHERE |
-| R43 | 🟢 Low | Implicit JOIN (comma syntax) | `FROM t1, t2 WHERE ...` → use explicit `JOIN` |
-
----
-
-## Severity Penalty Reference
-
-| Severity | Points Deducted | Meaning |
-|---|---|---|
-| 🔴 Critical | −15 | Fix before next release. Data loss, security breach, or corruption risk. |
-| 🟠 High | −8 | Fix this sprint. Integrity, security, or significant performance issue. |
-| 🟡 Medium | −4 | Plan to fix. Maintainability, normalization, or operational gap. |
-| 🟢 Low | −1 | Best practice. Cosmetic or minor improvement. |
-
----
-
-## Domain Priority Weighting
-
-When a business domain is auto-detected, certain category penalties are multiplied:
-
-| Domain | Boosted Categories | Multiplier |
-|---|---|---|
-| Healthcare | Security, Integrity | 2×, 1.5× |
-| Finance | Integrity, Security, Performance | 2×, 1.8×, 1.3× |
-| E-commerce | Performance, Integrity, Indexing | 1.5×, 1.5×, 1.4× |
-| SaaS | Relationships, Performance | 1.4×, 1.3× |
-
----
-
-## Adding New Rules
-
-Rules are defined inside `runRules(tables, queryTxt, overview, domain)` in `index.html`. Each rule calls `add()`:
-
-```js
-function add(severity, category, title, table, description, fix, tags) { ... }
+```
+parseDDL(ddl) → tables[]
+     ↓
+runRules(tables, queries, overview, domain) → findings[]
+     ↓
+scoreSecs(findings) → sectionScores{}
+     ↓
+calcScore(sectionScores) → healthScore (0–100)
 ```
 
-To add a rule:
-1. Open `index.html`, find `// R[next number]`
-2. Add an `add()` call with the appropriate severity, category, and fix SQL
-3. Test with a DDL that triggers it
-4. Verify score impact in the Results > Summary tab
+## Rule Categories & Full Reference
+
+### 🔑 Keys & Integrity (R01–R08, N6)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R01 | Missing PRIMARY KEY | Critical |
+| R02 | Empty table definition | Critical |
+| R03 | FLOAT/REAL for monetary column | High |
+| R04 | Missing UNIQUE constraint on email | High |
+| R05 | NULL allowed on key columns (email, name, status) | Medium |
+| R06 | TEXT used for bounded-length field | Low |
+| R07 | Wide table (30+ columns) | Medium |
+| N6  | DECIMAL/NUMERIC without explicit precision and scale | Medium |
+
+### 🛡 Security (R09–R14)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R09 | Plaintext password storage (pwd/pass VARCHAR < 60) | Critical |
+| R10 | Unprotected PII — SSN / NIN / passport | Critical |
+| R11 | Payment card data column | Critical |
+| R12 | Sensitive token/API key stored as plain VARCHAR | High |
+| R13 | Role/permission as unconstrained VARCHAR | High |
+| R14 | No soft-delete pattern on user/account tables | Medium |
+
+### 📐 Normalization (R15–R19, N7)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R15 | Repeating column groups — 1NF violation (addr1/addr2/addr3) | High |
+| R16 | Derived/computed column (total, full_name, final_amount) | Medium |
+| R17 | Duplicate column semantics (total + final_total + amount) | Medium |
+| N7  | Comma-separated values stored in a column — 1NF violation | High |
+
+### ✏️ Naming Conventions (R20–R26, N8)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R20 | Reserved word as table name (USER, ORDER, GROUP) | High |
+| R21 | Reserved word as column name | Medium |
+| R22 | ALLCAPS table name | Medium |
+| R23 | Mixed naming conventions (snake_case + camelCase) | Medium |
+| R24 | Cryptic column name (≤2 characters) | Low |
+| R25 | Inconsistent plural/singular table names across schema | Low |
+| N8  | Boolean column missing is_/has_/can_ prefix | Low |
+
+### 🔗 Relationships (R27–R32, N2, N3, N5)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R27 | _id column without FK constraint | High |
+| R28 | Missing index on FK column | High |
+| R29 | Isolated table (no FK relationships in or out) | Medium |
+| R30 | Cross-schema FK gap (table referenced but not in schema) | Medium |
+| N2  | Nullable FK column without ON DELETE rule | Medium |
+| N3  | Self-referencing FK not declared (parent_id, manager_id) | Medium |
+| N5  | Junction/pivot table missing composite PRIMARY KEY | Medium |
+
+### ⚙️ Operational (R33–R37, N4, N9, N10)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R33 | Missing created_at timestamp | Medium |
+| R34 | Missing updated_at timestamp | Low |
+| R35 | Single-column table | Low |
+| N4  | Missing tenant_id/org_id in SaaS domain | High |
+| N9  | Missing created_by / updated_by on transactional tables | Low |
+| N10 | No audit table in Healthcare/Finance/Banking domain | High |
+
+### ⚡ Performance & Indexing (R38–R41)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R38 | IP address stored as VARCHAR (use INET) | Low |
+| R39 | CHAR(n) where n > 4 (use VARCHAR instead) | Low |
+| R40 | Missing index on email/username/slug column | Medium |
+| R41 | Missing index on status/type column | Low |
+
+### 🔍 Query Analysis (R42–R44)
+
+| ID | Rule | Severity |
+|----|------|----------|
+| R42 | SELECT * in query | Medium |
+| R43 | UPDATE/DELETE without WHERE clause | Critical |
+| R44 | Implicit JOIN syntax (comma-join) | Low |
+
+### 🔒 Platform Compatibility (Advisory — no score impact)
+
+Triggered when DDL types don't match the selected platform. Shows a warning banner in Summary tab.
+
+| Platform | Flagged as incompatible |
+|----------|------------------------|
+| PostgreSQL | AUTO_INCREMENT, NVARCHAR, DATETIME, NUMBER, VARCHAR2 |
+| MySQL | SERIAL, BIGSERIAL, TIMESTAMPTZ, JSONB, INET, BOOLEAN |
+| SQL Server | SERIAL, AUTO_INCREMENT, TIMESTAMPTZ, JSONB, BOOLEAN |
+| Oracle | SERIAL, AUTO_INCREMENT, BOOLEAN, TIMESTAMPTZ, JSONB |
+| SQLite | SERIAL, TIMESTAMPTZ, JSONB, INET, UUID, BOOLEAN |
+
+## New Rules Added in v1.1 (Task 1)
+
+10 new rules were added:
+- **N1** status/type VARCHAR without CHECK constraint (Medium)
+- **N2** Nullable FK without ON DELETE rule (Medium)
+- **N3** Self-referencing FK not declared (Medium)
+- **N4** Missing tenant_id in SaaS domain (High)
+- **N5** Junction table missing composite PK (Medium)
+- **N6** DECIMAL/NUMERIC without precision/scale (Medium)
+- **N7** Comma-separated values in column (High)
+- **N8** Boolean column missing is_/has_ prefix (Low)
+- **N9** Missing created_by/updated_by (Low)
+- **N10** No audit table in regulated domain (High)
+
+Additionally, a pre-existing bug in the plaintext password rule was fixed — the parser
+strips `(n)` from `VARCHAR(n)` so the length check now uses `col.rawType` fallback.
+
+## Rule Engine Flow
+
+```javascript
+function runRules(tables, queries, overview, domain) {
+  const findings = [];
+  function add(severity, category, title, table, description, fix, tags) {
+    findings.push({ severity, category, title, table, description, fix, tags });
+  }
+
+  // Per-table rules
+  tables.forEach(t => {
+    // Per-column rules
+    t.columns.forEach(col => { ... });
+    // Cross-column rules
+    // Relationship rules
+  });
+
+  // Cross-table rules
+  // Query rules (if queries submitted)
+  // New rules (N1–N10)
+  // Audit table rule (N10) — cross-schema check
+
+  return findings;
+}
+```
+
+## Adding a New Rule
+
+1. Find the appropriate section in `runRules()`
+2. Use the `add(severity, category, title, table, description, fix, tags)` helper
+3. Severity: `'critical'` | `'high'` | `'medium'` | `'low'`
+4. Category must match a scored section key in `SECTION_MAP`
+5. Test with Node.js simulation before committing
