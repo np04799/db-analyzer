@@ -70,6 +70,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .diag-btn.active{border-color:var(--ac);color:var(--ac);background:var(--acbg)}
 .diag-info{font-size:11px;color:var(--t3);margin-left:auto}
 .diag-minimap{position:absolute;bottom:12px;right:12px;background:var(--s1);border:1px solid var(--b);border-radius:var(--r);overflow:hidden;opacity:.85}
+.diag-table-box.dragging{opacity:.9;filter:drop-shadow(0 4px 16px rgba(45,140,255,.5))}
+.diag-btn.edit-active{border-color:var(--ac)!important;color:var(--ac)!important;background:var(--acbg)!important}
+.diag-name-input{position:absolute;background:var(--s1);border:2px solid var(--ac);border-radius:5px;color:var(--ac);font-size:13px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:3px 8px;outline:none;z-index:100;box-shadow:0 4px 16px rgba(45,140,255,.3);min-width:120px}
 .diag-cluster-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-bottom:6px}
 
 /* HEADER */
@@ -874,10 +877,12 @@ function parseDDL(ddl) {
       const rest = line.toUpperCase();
       const col = {
         name: cn, type: ct,
+        rawType: line.trim().split(/\s+/).slice(1,3).join(' '),
         nullable: !rest.includes('NOT NULL'),
         hasPK: rest.includes('PRIMARY KEY'),
         hasUnique: rest.includes('UNIQUE'),
         hasDefault: rest.includes('DEFAULT'),
+        hasCheck: rest.includes('CHECK'),
         autoInc: rest.includes('AUTO_INCREMENT') || rest.includes('AUTOINCREMENT') || ['SERIAL','BIGSERIAL','SMALLSERIAL'].some(s => ct.includes(s)) || rest.includes('IDENTITY')
       };
       if (col.hasPK) con.pk = true;
@@ -942,7 +947,7 @@ function runRules(tables, queryTxt, overview, domain) {
       const moneyP = ['price','total','amount','balance','cost','salary','fee','charge','tax','discount','revenue','profit'];
       if (['FLOAT','REAL','DOUBLE'].some(f => ct.startsWith(f)) && moneyP.some(p => cn.includes(p))) add('high','Integrity',`FLOAT for monetary column: ${tn}.${col.name}`,tn,`FLOAT has floating-point precision errors. For monetary values this causes rounding discrepancies that compound over millions of transactions. Use DECIMAL.`,`ALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE DECIMAL(12,2);`,['Integrity']);
       // R Password plaintext
-      if (['pwd','password','passwd','pass'].includes(cn)) { const sm = ct.match(/\((\d+)\)/); if (sm && parseInt(sm[1]) < 60) add('critical','Security',`Plaintext password risk: ${tn}.${col.name}`,tn,`"${col.name}" (${ct}) is too short for a bcrypt hash (60 chars) or argon2 hash (95+ chars). This strongly suggests plaintext password storage — a critical security vulnerability.`,`ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO password_hash;\nALTER TABLE ${tn} ALTER COLUMN password_hash TYPE VARCHAR(255);\n-- Enforce bcrypt/argon2id hashing in application layer.`,['Security']); }
+      if (['pwd','password','passwd','pass'].includes(cn)) { const sm = col.rawType ? col.rawType.match(/(\d+)/) : null; const typeLen = sm ? parseInt(sm[1]) : 0; if (typeLen === 0 || typeLen < 60) add('critical','Security',`Plaintext password risk: ${tn}.${col.name}`,tn,`"${col.name}" (${ct}) is too short for a bcrypt hash (60 chars) or argon2 hash (95+ chars). This strongly suggests plaintext password storage — a critical security vulnerability.`,`ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO password_hash;\nALTER TABLE ${tn} ALTER COLUMN password_hash TYPE VARCHAR(255);\n-- Enforce bcrypt/argon2id hashing in application layer.`,['Security']); }
       // R PII columns
       if (['ssn','sin','nin','passport','national_id','tax_id','nid'].some(p => cn === p || cn.includes(p))) add('critical','Security',`Unprotected PII column: ${tn}.${col.name}`,tn,`"${col.name}" stores government identity data. GDPR and HIPAA require this to be encrypted at rest. Plain VARCHAR storage is a compliance violation.`,`-- Use pgcrypto for column-level encryption:\n-- Store: pgp_sym_encrypt(value, 'encryption_key')\n-- Read:  pgp_sym_decrypt(${col.name}, 'encryption_key')::TEXT\nALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE BYTEA;`,['Security']);
       // R Credit card
@@ -994,6 +999,143 @@ function runRules(tables, queryTxt, overview, domain) {
       if ((qu.includes('UPDATE ') || qu.includes('DELETE ')) && !qu.includes('WHERE')) findings.push({ severity: 'critical', category: 'Query', title: `UPDATE/DELETE without WHERE in query ${qi+1}`, table: 'Query', description: 'A missing WHERE clause will modify or delete every row in the table. This is one of the most destructive SQL mistakes.', fix: `-- Always include a WHERE clause:\n${q.substring(0, 50)}...\nWHERE id = :id`, tags: ['Integrity'], db: 1 });
       if (qu.match(/FROM\s+\w+\s*,\s*\w+/)) findings.push({ severity: 'low', category: 'Query', title: `Implicit JOIN (comma syntax) in query ${qi+1}`, table: 'Query', description: 'Comma-separated FROM clause is an implicit cross-join. Use explicit JOIN syntax for clarity and to avoid accidental Cartesian products.', fix: `-- Replace: FROM table1, table2 WHERE t1.id = t2.ref_id\n-- With: FROM table1 INNER JOIN table2 ON t1.id = t2.ref_id`, tags: ['Performance','Maintainability'], db: 1 });
     });
+  }
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // NEW RULES N1–N10
+  // ══════════════════════════════════════════════════════════════════
+  tables.forEach(t => {
+    const tn = t.name;
+    const cols = t.columns;
+    const colNames = cols.map(c => c.name.toLowerCase());
+    const hasPK = t.constraints?.pk;
+    const fks = t.constraints?.fks || [];
+
+    // N1: status/type/state without CHECK constraint
+    cols.forEach(col => {
+      const cn = col.name.toLowerCase();
+      const ct = col.type.toUpperCase();
+      const isStatusCol = ['status','state','type','role','kind','category','priority','mode'].includes(cn);
+      const isVarchar = ct.startsWith('VARCHAR') || ct.startsWith('TEXT') || ct === 'STRING';
+      const hasCheck = col.hasCheck === true;
+      if (isStatusCol && isVarchar && !hasCheck) {
+        add('medium','Keys & Integrity',`Unconstrained ${col.name} column: ${tn}.${col.name}`,tn,
+          `"${col.name}" is a VARCHAR with no CHECK constraint — any value can be inserted, leading to inconsistent data (e.g. "Active", "active", "ACTIVE") that silently breaks application logic.`,
+          `ALTER TABLE ${tn} ADD CONSTRAINT chk_${tn}_${col.name}\n  CHECK (${col.name} IN ('active','inactive','pending'));`,
+          ['Integrity','Normalization']);
+      }
+    });
+
+    // N2: nullable FK without ON DELETE
+    fks.forEach(fk => {
+      const fkCol = cols.find(c => c.name.toLowerCase() === fk.col.toLowerCase());
+      const isNullable = fkCol ? fkCol.nullable : true;
+      const hasOnDelete = fk.onDelete;
+      if (isNullable && !hasOnDelete && fkCol) {
+        add('medium','Relationships',`Nullable FK without ON DELETE: ${tn}.${fk.col}`,tn,
+          `"${fk.col}" is a nullable FK referencing ${fk.ref} with no ON DELETE rule. When a parent row is deleted, orphan rows remain — silently corrupting referential integrity.`,
+          `ALTER TABLE ${tn} DROP CONSTRAINT IF EXISTS fk_${tn}_${fk.col};\nALTER TABLE ${tn} ADD CONSTRAINT fk_${tn}_${fk.col}\n  FOREIGN KEY (${fk.col}) REFERENCES ${fk.ref}(id) ON DELETE SET NULL;`,
+          ['Relationships','Integrity']);
+      }
+    });
+
+    // N3: self-referencing FK not declared
+    const selfRefNames = ['parent_id','manager_id','supervisor_id','reply_to_id'];
+    cols.forEach(col => {
+      const cn = col.name.toLowerCase();
+      const isSelfRef = selfRefNames.includes(cn) || (cn.endsWith('_id') && cn.replace('_id','') === tn.toLowerCase());
+      const alreadyHasFK = fks.some(f => f.col.toLowerCase() === cn);
+      if (isSelfRef && !alreadyHasFK) {
+        add('medium','Relationships',`Self-referencing FK not declared: ${tn}.${col.name}`,tn,
+          `"${col.name}" appears to be a self-referencing column (tree/hierarchy) but has no FOREIGN KEY constraint. Invalid parent references cannot be caught by the database.`,
+          `ALTER TABLE ${tn} ADD CONSTRAINT fk_${tn}_${col.name}\n  FOREIGN KEY (${col.name}) REFERENCES ${tn}(id) ON DELETE SET NULL;`,
+          ['Relationships','Integrity']);
+      }
+    });
+
+    // N4: missing tenant_id in SaaS domain
+    const isSaaSDomain = domain && domain.toLowerCase().includes('saas');
+    const hasTenantCol = colNames.some(c => ['tenant_id','org_id','organisation_id','organization_id','account_id','workspace_id'].includes(c));
+    const isSystemTable = ['tenants','organizations','organisations','accounts','workspaces','plans','subscriptions'].includes(tn.toLowerCase());
+    if (isSaaSDomain && !hasTenantCol && !isSystemTable) {
+      add('high','Operational',`Missing tenant isolation: ${tn}`,tn,
+        `SaaS domain detected but "${tn}" has no tenant_id/org_id column. Without tenant scoping, all rows are shared across customers — a critical multi-tenancy gap that risks data leakage.`,
+        `ALTER TABLE ${tn} ADD COLUMN tenant_id UUID NOT NULL REFERENCES tenants(id);\nCREATE INDEX idx_${tn}_tenant ON ${tn}(tenant_id);`,
+        ['Operational','Security','Relationships']);
+    }
+
+    // N5: junction table missing composite PK
+    const fkCols = cols.filter(c => fks.some(f => f.col.toLowerCase() === c.name.toLowerCase()));
+    const looksLikeJunction = fks.length >= 2 && cols.length <= fks.length + 3 && !hasPK;
+    if (looksLikeJunction) {
+      add('medium','Relationships',`Junction table missing composite PK: ${tn}`,tn,
+        `"${tn}" looks like a junction/pivot table (${fks.length} FK columns, few other columns) but has no PRIMARY KEY. Duplicate association rows can be inserted silently.`,
+        `ALTER TABLE ${tn} ADD PRIMARY KEY (${fkCols.slice(0,2).map(c=>c.name).join(', ')});`,
+        ['Relationships','Integrity']);
+    }
+
+    // N6: DECIMAL/NUMERIC without precision
+    cols.forEach(col => {
+      const ct = col.type.toUpperCase().trim();
+      const hasPrecision = col.rawType ? col.rawType.includes('(') : false;
+      if ((ct === 'DECIMAL' || ct === 'NUMERIC') && !hasPrecision) {
+        add('medium','Keys & Integrity',`DECIMAL without precision: ${tn}.${col.name}`,tn,
+          `"${col.name}" uses DECIMAL/NUMERIC without explicit precision and scale. Behaviour varies by platform — MySQL defaults to DECIMAL(10,0) which silently truncates decimals.`,
+          `ALTER TABLE ${tn} ALTER COLUMN ${col.name} TYPE DECIMAL(10,2);`,
+          ['Integrity','Normalization']);
+      }
+    });
+
+    // N7: comma-separated values in column (1NF)
+    cols.forEach(col => {
+      const cn = col.name.toLowerCase();
+      const ct = col.type.toUpperCase();
+      const isMultiValue = ['tags','categories','permissions','roles','ids','items','values','labels','skills','keywords'].includes(cn) || cn.endsWith('_ids') || cn.endsWith('_list') || cn.endsWith('_csv');
+      const isTextType = ct.startsWith('TEXT') || ct.startsWith('VARCHAR') || ct === 'STRING';
+      if (isMultiValue && isTextType) {
+        add('high','Normalization',`Comma-separated values in column: ${tn}.${col.name}`,tn,
+          `"${col.name}" appears to store multiple values in a single column. This violates 1NF — you cannot query, index, or enforce referential integrity on individual values.`,
+          `CREATE TABLE ${tn}_${col.name} (\n  ${tn.toLowerCase()}_id INT REFERENCES ${tn}(id),\n  value VARCHAR(100) NOT NULL,\n  PRIMARY KEY (${tn.toLowerCase()}_id, value)\n);`,
+          ['Normalization','Integrity']);
+      }
+    });
+
+    // N8: boolean column missing is_/has_ prefix
+    cols.forEach(col => {
+      const cn = col.name.toLowerCase();
+      const ct = col.type.toUpperCase();
+      const isBoolean = ct === 'BOOLEAN' || ct === 'BOOL' || ct === 'TINYINT(1)' || ct === 'BIT';
+      const hasPrefix = ['is_','has_','can_','was_','will_','should_','allow_'].some(p => cn.startsWith(p));
+      if (isBoolean && !hasPrefix) {
+        add('low','Schema & Architecture',`Boolean column missing is_/has_ prefix: ${tn}.${col.name}`,tn,
+          `"${col.name}" is a BOOLEAN column without is_/has_/can_ prefix. This convention immediately signals the column is a flag and improves code readability.`,
+          `ALTER TABLE ${tn} RENAME COLUMN ${col.name} TO is_${col.name};`,
+          ['Naming']);
+      }
+    });
+
+    // N9: missing created_by/updated_by on transactional tables
+    const hasCreatedAt = colNames.some(c => ['created_at','created_on','createdat'].includes(c));
+    const hasCreatedBy = colNames.some(c => ['created_by','createdby','created_by_id','creator_id','author_id'].includes(c));
+    const isTransactional = hasCreatedAt && cols.length > 3;
+    const isAuditOrLog = ['audit','log','logs','history','events'].some(s => tn.toLowerCase().includes(s));
+    if (isTransactional && !hasCreatedBy && !isAuditOrLog) {
+      add('low','Operational',`Missing created_by / updated_by: ${tn}`,tn,
+        `"${tn}" has timestamps but no user traceability columns. Without created_by/updated_by you cannot determine which user created or last modified a record.`,
+        `ALTER TABLE ${tn} ADD COLUMN created_by UUID REFERENCES users(id);\nALTER TABLE ${tn} ADD COLUMN updated_by UUID REFERENCES users(id);`,
+        ['Operational']);
+    }
+  }); // end new rules tables.forEach
+
+  // N10: no audit table in regulated domain (cross-table check)
+  const isRegulatedDomain = domain && ['healthcare','finance','banking','insurance','medical'].some(d => domain.toLowerCase().includes(d));
+  const hasAuditTable = tables.some(t => ['audit','audit_log','audit_trail','audit_logs','activity_log','access_log','event_log','changelog'].some(a => t.name.toLowerCase().includes(a)));
+  if (isRegulatedDomain && !hasAuditTable) {
+    add('high','Operational',`No audit table detected in regulated domain`,tables[0]?.name||'Schema',
+      `${domain} domain detected but no audit/log table found. HIPAA, PCI-DSS and SOX mandate immutable audit trails for data access and modification.`,
+      `CREATE TABLE audit_log (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  table_name VARCHAR(100) NOT NULL,\n  record_id VARCHAR(100) NOT NULL,\n  action VARCHAR(10) NOT NULL CHECK (action IN ('INSERT','UPDATE','DELETE')),\n  old_values JSONB,\n  new_values JSONB,\n  changed_by UUID REFERENCES users(id),\n  changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);`,
+      ['Operational','Security']);
   }
 
   return findings;
@@ -1591,6 +1733,12 @@ function buildERDiagram(r) {
     layoutClusters(tboxes, edges, schemaColor);
   }
 
+  // Apply saved drag positions
+  tboxes.forEach(t => {
+    const key = `${t.name}|${t.schemaName || 'default'}`;
+    if (_diagTablePositions[key]) { t.x = _diagTablePositions[key].x; t.y = _diagTablePositions[key].y; }
+  });
+
   // ── SVG DIMENSIONS ─────────────────────────────────────
   const margin = 40;
   const maxX = Math.max(...tboxes.map(t => t.x + t.w)) + margin;
@@ -1641,6 +1789,9 @@ function buildERDiagram(r) {
     const { x, y, w, h } = t;
     const hasFk = edges.some(e => e.from.name === t.name || e.to.name === t.name);
 
+    // Draggable group per table
+    svg += `<g class="diag-table-box" data-table="${esc2(t.name)}" data-schema="${esc2(t.schemaName || 'default')}" style="cursor:${_diagEditMode ? 'grab' : 'default'}">`;
+
     // Table box shadow
     svg += `<rect x="${x+3}" y="${y+3}" width="${w}" height="${h}" rx="8" fill="#000000" opacity="0.3"/>`;
 
@@ -1656,10 +1807,14 @@ function buildERDiagram(r) {
     if (schemaNames.length > 1) {
       svg += `<circle cx="${x+12}" cy="${y+HDR_H/2}" r="4" fill="${col}"/>`;
     }
-    // Table name
+    // Table name (click in edit mode to rename inline)
     const nameX = schemaNames.length > 1 ? x + 22 : x + PAD;
     svg += `<text x="${nameX}" y="${y+HDR_H/2+5}" font-size="13" font-weight="700"
-      fill="${col}" font-family="-apple-system,sans-serif">${esc2(t.name)}</text>`;
+      fill="${col}" font-family="-apple-system,sans-serif"
+      class="diag-table-name" data-table="${esc2(t.name)}" data-schema="${esc2(t.schemaName || 'default')}"
+      data-x="${x}" data-y="${y}" data-w="${w}"
+      style="cursor:${_diagEditMode ? 'text' : 'default'}"
+      onclick="if(_diagEditMode) diagStartRename(this)">${esc2(t.name)}</text>`;
 
     // Column count badge
     svg += `<text x="${x+w-PAD}" y="${y+HDR_H/2+4}" font-size="9" fill="${col}88"
@@ -1715,6 +1870,7 @@ function buildERDiagram(r) {
           stroke="#21262D" stroke-width="0.5"/>`;
       }
     });
+    svg += `</g>`; // close draggable group
   });
 
   svg += '</svg>';
@@ -1828,6 +1984,8 @@ function renderDiagramTab(r) {
           <button class="diag-btn" onclick="diagZoom(1.2)" title="Zoom in">＋ Zoom In</button>
           <button class="diag-btn" onclick="diagZoom(0.8)" title="Zoom out">－ Zoom Out</button>
           <button class="diag-btn" onclick="diagReset()" title="Reset view">⟳ Reset</button>
+          <button class="diag-btn" id="diagEditBtn" onclick="diagToggleEdit(this)" title="Toggle edit mode — drag tables or click name to rename">✏️ Edit Layout</button>
+          <button class="diag-btn" onclick="diagResetLayout()" title="Reset all table positions to auto-layout">↺ Reset Layout</button>
           <button class="diag-btn" onclick="diagDownload('svg')" title="Download SVG">⬇ SVG</button>
           <button class="diag-btn" onclick="diagDownload('png')" title="Download PNG">⬇ PNG</button>
           <span class="diag-info">${modeNote} · Drag to pan · Scroll to zoom</span>
@@ -1853,6 +2011,80 @@ function renderDiagramTab(r) {
 
 // ── PAN / ZOOM ────────────────────────────────────────────────────────────
 let _diagScale = 1, _diagOffX = 0, _diagOffY = 0, _diagDragging = false, _diagLast = null;
+let _diagTablePositions = {};
+let _diagDragTable = null;
+let _diagDragStart = null;
+let _diagEditMode = false;
+
+function diagToggleEdit(btn) {
+  _diagEditMode = !_diagEditMode;
+  if (btn) btn.classList.toggle('edit-active', _diagEditMode);
+  const wrap = document.getElementById('diagWrap');
+  if (wrap) {
+    wrap.querySelectorAll('.diag-table-box').forEach(g => { g.style.cursor = _diagEditMode ? 'grab' : 'default'; });
+    wrap.querySelectorAll('.diag-table-name').forEach(t => { t.style.cursor = _diagEditMode ? 'text' : 'default'; });
+    wrap.style.cursor = _diagEditMode ? 'default' : 'grab';
+  }
+}
+
+function diagResetLayout() {
+  _diagTablePositions = {};
+  if (result) renderDiagramTab(result);
+}
+
+function diagStartRename(textEl) {
+  const wrap = document.getElementById('diagWrap');
+  if (!wrap) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  const textRect = textEl.getBoundingClientRect();
+  const oldName = textEl.getAttribute('data-table');
+  const schemaName = textEl.getAttribute('data-schema');
+  const existing = wrap.querySelector('.diag-name-input');
+  if (existing) existing.remove();
+  const input = document.createElement('input');
+  input.className = 'diag-name-input';
+  input.value = oldName;
+  input.style.left = (textRect.left - wrapRect.left) + 'px';
+  input.style.top  = (textRect.top  - wrapRect.top  - 4) + 'px';
+  input.style.width = Math.max(120, textRect.width + 40) + 'px';
+  wrap.style.position = 'relative';
+  wrap.appendChild(input);
+  input.focus(); input.select();
+  function commit() {
+    const newName = input.value.trim();
+    input.remove();
+    if (!newName || newName === oldName) return;
+    diagCommitRename(oldName, newName, schemaName);
+  }
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') input.remove(); });
+  input.addEventListener('blur', commit);
+}
+
+function diagCommitRename(oldName, newName, schemaName) {
+  if (!result || !result.srs) return;
+  const sr = result.srs.find(s => s.name === schemaName) || result.srs[0];
+  if (!sr) return;
+  const schemaIdx = result.srs.indexOf(sr);
+  const schemaEls = document.querySelectorAll('.sdl');
+  const ddlArea = schemaEls[schemaIdx];
+  if (!ddlArea) return;
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const en = esc(oldName);
+  const renamed = ddlArea.value
+    .replace(new RegExp('(?<=CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?)' + en + '(?=\\s*\\()', 'gi'), newName)
+    .replace(new RegExp('(?<=REFERENCES\\s+)' + en + '(?=\\s*[\\(\\s,;])', 'gi'), newName);
+  ddlArea.value = renamed;
+  ddlArea.dispatchEvent(new Event('input', { bubbles: true }));
+  const oldKey = oldName + '|' + schemaName, newKey = newName + '|' + schemaName;
+  if (_diagTablePositions[oldKey]) { _diagTablePositions[newKey] = _diagTablePositions[oldKey]; delete _diagTablePositions[oldKey]; }
+  setTimeout(() => { try { if (typeof runAnalysis === 'function') runAnalysis(); } catch(e) {} }, 200);
+}
+
+function _diagGetTableFromEvent(e) {
+  let el = e.target;
+  while (el && el !== e.currentTarget) { if (el.classList && el.classList.contains('diag-table-box')) return el; el = el.parentElement; }
+  return null;
+}
 
 function initDiagPanZoom() {
   const wrap = document.getElementById('diagWrap');
@@ -1861,11 +2093,47 @@ function initDiagPanZoom() {
   _diagScale = 1; _diagOffX = 0; _diagOffY = 0;
 
   wrap.onmousedown = (e) => {
+    if (_diagEditMode) {
+      const tableEl = _diagGetTableFromEvent(e);
+      if (tableEl) {
+        const tName = tableEl.getAttribute('data-table');
+        const tSchema = tableEl.getAttribute('data-schema');
+        const key = tName + '|' + tSchema;
+        const rects = tableEl.querySelectorAll('rect');
+        let ox = 0, oy = 0;
+        if (rects.length >= 2) { ox = parseFloat(rects[1].getAttribute('x') || 0); oy = parseFloat(rects[1].getAttribute('y') || 0); }
+        else if (_diagTablePositions[key]) { ox = _diagTablePositions[key].x; oy = _diagTablePositions[key].y; }
+        _diagDragTable = { name: tName, schemaName: tSchema, key };
+        _diagDragStart = { mx: e.clientX, my: e.clientY, ox, oy };
+        tableEl.classList.add('dragging');
+        tableEl.style.cursor = 'grabbing';
+        e.preventDefault(); e.stopPropagation(); return;
+      }
+    }
     _diagDragging = true; _diagLast = { x: e.clientX, y: e.clientY };
-    wrap.classList.add('grabbing');
+    if (!_diagEditMode) wrap.classList.add('grabbing');
   };
-  window.onmouseup = () => { _diagDragging = false; wrap.classList.remove('grabbing'); };
+
+  window.onmouseup = () => {
+    if (_diagDragTable) {
+      const tableEl = canvas.querySelector(`[data-table="${_diagDragTable.name}"][data-schema="${_diagDragTable.schemaName}"]`);
+      if (tableEl) { tableEl.classList.remove('dragging'); tableEl.style.cursor = _diagEditMode ? 'grab' : 'default'; }
+      _diagDragTable = null; _diagDragStart = null; return;
+    }
+    _diagDragging = false; wrap.classList.remove('grabbing');
+  };
+
   wrap.onmousemove = (e) => {
+    if (_diagDragTable && _diagDragStart) {
+      const dx = (e.clientX - _diagDragStart.mx) / _diagScale;
+      const dy = (e.clientY - _diagDragStart.my) / _diagScale;
+      const newX = Math.max(0, _diagDragStart.ox + dx);
+      const newY = Math.max(0, _diagDragStart.oy + dy);
+      _diagTablePositions[_diagDragTable.key] = { x: newX, y: newY };
+      const tableEl = canvas.querySelector(`[data-table="${_diagDragTable.name}"][data-schema="${_diagDragTable.schemaName}"]`);
+      if (tableEl) tableEl.setAttribute('transform', `translate(${newX - _diagDragStart.ox},${newY - _diagDragStart.oy})`);
+      e.preventDefault(); return;
+    }
     if (!_diagDragging) return;
     _diagOffX += e.clientX - _diagLast.x;
     _diagOffY += e.clientY - _diagLast.y;
