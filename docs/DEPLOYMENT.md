@@ -1,14 +1,12 @@
-# Deployment Guide — DB Schema Analyzer v1.0
+# Deployment — DB Schema Analyzer
 
-## Live Environment
+## Hosting
 
-| Property | Value |
-|---|---|
-| URL | https://db-analyzer-two.vercel.app/ |
-| Platform | Vercel Static |
-| GitHub Repo | https://github.com/np04799/db-analyzer |
-| Branch | `main` |
-| Auto-deploy | Yes — every push to `main` triggers a Vercel deployment |
+**Platform:** Vercel Static
+**Repo:** https://github.com/np04799/db-analyzer
+**Live URL:** https://db-analyzer-two.vercel.app/
+**Docs URL:** https://db-analyzer-two.vercel.app/docs.html
+**Branch:** `main` — Vercel auto-deploys on every push
 
 ---
 
@@ -17,118 +15,102 @@
 ```json
 {
   "version": 2,
-  "builds": [{ "src": "index.html", "use": "@vercel/static" }],
-  "routes": [{ "src": "/(.*)", "dest": "/index.html" }],
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "docs.html",  "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/docs.html",    "dest": "/docs.html" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)",         "dest": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
+        { "key": "Cache-Control",            "value": "public, max-age=3600" }
       ]
     }
   ]
 }
 ```
 
+**Important:** `docs.html` must be listed before the `(.*)` catch-all route,
+otherwise Vercel serves `index.html` for all paths including `/docs.html`.
+
 ---
 
-## Deploy via GitHub (recommended)
+## GitHub API Commit Workflow
 
-Auto-deploy is already configured. To deploy a change:
+All commits use the GitHub Contents API directly (no `git` CLI required):
+
+```python
+# Step 1: Get current SHA (always fetch fresh — stale SHAs cause 409 conflicts)
+GET https://api.github.com/repos/{REPO}/contents/{path}?ref=main
+→ sha = response['sha']
+
+# Step 2: Base64-encode the new content
+content = base64.b64encode(file_bytes).decode()
+
+# Step 3: PUT the updated file
+PUT https://api.github.com/repos/{REPO}/contents/{path}
+Body: { "message": "...", "content": content, "sha": sha, "branch": "main" }
+```
+
+**Token:** Stored in Claude's memory for this project.
+**Critical:** Never commit without explicit user approval.
+
+---
+
+## Development Workflow
+
+No build step. Edit `index.html` locally, test via Node.js simulation:
 
 ```bash
-# 1. Make changes to index.html locally
+# Syntax check
+node --check index.html  # (after extracting <script> content)
 
-# 2. Commit and push to main
-git add index.html
-git commit -m "feat: describe your change"
-git push origin main
-
-# 3. Vercel detects the push and deploys automatically
-#    Deployment takes ~30 seconds
-#    Live at: https://db-analyzer-two.vercel.app/
+# Simulate analysis
+node -e "
+const html = fs.readFileSync('index.html', 'utf-8');
+// extract largest <script> block
+// mock DOM (getElementById, querySelector, etc.)
+// call parseDDL(), runRules(), renderAll()
+"
 ```
 
 ---
 
-## Deploy via Vercel CLI
+## File Sizes (v1.1.0)
 
-```bash
-# Install Vercel CLI
-npm install -g vercel
+| File | Size |
+|------|------|
+| `index.html` | ~180KB |
+| `docs.html` | ~42KB |
+| `vercel.json` | <1KB |
+| `assets/DB_Schema_Analyzer_Presentations.zip` | ~85KB |
 
-# Login
-vercel login
+---
 
-# Deploy to production
-cd db-analyzer
-vercel --prod
+## Deployment Checklist
+
+Before committing:
+- [ ] JS syntax valid (`node --check`)
+- [ ] All new rules tested with Node.js simulation
+- [ ] Regression checks pass (existing rules unchanged)
+- [ ] File size reasonable (< 250KB for index.html)
+- [ ] Verified on live site after Vercel deploy (~30s)
+
+---
+
+## Environment Variables
+
+None required. The tool has no backend, no API keys, and no environment configuration.
+The jsPDF library loads from CDN on first use:
 ```
-
----
-
-## Initial Vercel Project Setup (one-time)
-
-1. Go to https://vercel.com/new
-2. Click **Import Git Repository** → select `np04799/db-analyzer`
-3. Configure:
-   - **Framework Preset:** Other
-   - **Root Directory:** `./`
-   - **Build Command:** *(leave blank)*
-   - **Output Directory:** *(leave blank)*
-4. Click **Deploy**
-
----
-
-## Run Locally
-
-No build step required. Open `index.html` directly in any modern browser:
-
-```bash
-# Option 1 — Direct file open
-open index.html   # macOS
-start index.html  # Windows
-
-# Option 2 — Simple HTTP server (avoids any file:// restrictions)
-npx serve .
-# or
-python3 -m http.server 8080
+https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
 ```
-
----
-
-## Environment Requirements
-
-| Requirement | Details |
-|---|---|
-| Browser | Chrome 90+, Edge 90+, Firefox 88+, Safari 14+ |
-| JavaScript | ES6+ (required) |
-| Internet | Only needed for jsPDF CDN on first load. Offline after. |
-| Server | None — fully static |
-| Node.js | Not required for production. Optional for local server. |
-
----
-
-## Branching Strategy
-
-| Branch | Purpose |
-|---|---|
-| `main` | Production — auto-deploys to Vercel |
-| `feature/*` | Feature development — requires PR + approval before merging to main |
-
-**Rule:** Never commit directly to `main` without approval. Always use feature branches and raise a PR.
-
----
-
-## Monitoring
-
-Vercel provides:
-- Deployment logs at https://vercel.com/np04799/db-analyzer-two
-- Analytics (if enabled) at the same dashboard
-- Domain management for custom domain setup
-
-No application-level error tracking is configured in v1 (no backend = no server logs).
