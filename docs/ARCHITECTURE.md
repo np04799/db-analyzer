@@ -1,195 +1,268 @@
-# Architecture — DB Schema Analyzer v1.0
+# Architecture — DB Schema Analyzer
 
 ## Overview
 
-DB Schema Analyzer is a **single-file, client-side web application**. All analysis logic runs in the user's browser — no backend server, no database, no API calls. The entire application is one `index.html` file (~131 KB) served as a static asset from Vercel.
+DB Schema Analyzer is a **single-file, zero-backend, client-side web application**.
+The entire application — HTML, CSS, and JavaScript — lives in `index.html` (~180KB).
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     Browser (Client)                     │
-│                                                         │
-│  ┌──────────┐   ┌──────────────┐   ┌────────────────┐  │
-│  │  UI/UX   │──▶│  DDL Parser  │──▶│  Rule Engine   │  │
-│  │ (HTML/   │   │ (parseDDL)   │   │ (runRules)     │  │
-│  │  CSS/JS) │   └──────────────┘   └───────┬────────┘  │
-│  │          │                              │            │
-│  │          │   ┌──────────────┐   ┌───────▼────────┐  │
-│  │          │◀──│  PDF Builder │◀──│ Scoring Engine │  │
-│  │          │   │  (jsPDF)     │   │ (scoreSecs)    │  │
-│  └──────────┘   └──────────────┘   └────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-         │
-         │ Static file only
-         ▼
-┌─────────────────┐
-│  Vercel CDN     │
-│  (index.html)   │
-└─────────────────┘
+Browser
+  └── index.html (HTML + CSS + JS)
+        ├── DDL Parser
+        ├── Rule Engine (50+ rules)
+        ├── Scoring Engine
+        ├── Schema Intelligence
+        ├── ER Diagram Engine (pure SVG)
+        ├── TAB_RENDERERS registry
+        └── PDF Builder (jsPDF 2.5.1 via CDN)
 ```
 
----
-
-## Page Structure (v1.0 current)
-
-```
-Header bar (sticky)
-  └── Logo · v1.0 badge · Rule Engine badge · Privacy First badge
-
-Overview strip (full width)
-  └── "What is DB Schema Analyzer?" — heading, description, badges
-  └── Horizontal steps: ① Business Overview → ② Schemas → ③ Analyze
-
-Main content (single column, full width)
-  └── Step 1 — Business Overview + domain detection + platform selector (lockable)
-  └── Step 2 — Schema cards (up to 5) + DDL textarea + file upload + query input
-  └── Step 3 — Analysis options + progress bar
-  └── Results — Score strip + tabs (Issues · Summary · Solutions · Comparison · Roadmap)
-
-How It Works banner
-  └── 5-step horizontal pipeline with arrows
-
-Footer (3-column)
-  └── DB Schema Analyzer tagline
-  └── What It Analyzes (6 categories)
-  └── Supported Platforms (6 DBs)
-  └── Bottom bar: version info + Privacy First badge
-```
-
----
-
-## Module Breakdown
-
-### 1. DDL Parser (`parseDDL`, `extractTableBody`)
-
-**Purpose:** Converts raw SQL DDL into a structured JavaScript object tree.
-
-**Key design:** Uses balanced-paren walking instead of regex to correctly handle:
-- `DEFAULT gen_random_uuid()` — nested parens in defaults
-- `DEFAULT NOW()` — function calls in defaults
-- Inline `REFERENCES table(id)` — parens inside column definition
-- `CREATE TABLE IF NOT EXISTS`
-- Quoted identifiers: `` `name` ``, `"name"`, `[name]`
-
-**Output:**
-```js
-[{
-  name: 'users',
-  columns: [{ name, type, nullable, hasPK, hasUnique, hasDefault, autoInc }],
-  constraints: { pk: bool, fks: [{col, ref}], uniques: [string] }
-}]
-```
-
----
-
-### 2. Rule Engine (`runRules`)
-
-Runs 40+ rules. Each finding:
-```js
-{
-  severity: 'critical' | 'high' | 'medium' | 'low',
-  category: 'Integrity' | 'Security' | 'Naming' | 'Normalization' |
-            'Relationships' | 'Indexing' | 'Performance' |
-            'Operational' | 'Architecture' | 'Query',
-  title, table, description, fix, tags, schemaName
-}
-```
-
-See [RULE_ENGINE.md](RULE_ENGINE.md) for full rule documentation.
-
----
-
-### 3. Domain Detection (`detectDomain`)
-
-Infers business domain from Business Overview text. Supports 7 domains: E-commerce, Healthcare, Finance, SaaS, HR/Payroll, Logistics, Education. Detected domain boosts penalty weights for relevant categories.
-
----
-
-### 4. Scoring Engine (`scoreSecs`, `calcScore`)
-
-Converts findings into section scores and a composite health score. See [SCORING.md](SCORING.md).
-
----
-
-### 5. Schema Intelligence Engine (`generateSchemaInsight`)
-
-Analyzes schema structure to give strategic recommendations in the Summary tab.
-- Single schema: detects domain mixing, recommends splits, suggests future schemas
-- Multi-schema: flags quality gaps, duplicate tables, cross-schema FKs, tiny schemas
-
----
-
-### 6. Platform Lock (`checkPlatformLock`)
-
-The Primary Database Platform dropdown in Step 1:
-- **Unlocked** — user can freely change platform, propagates to all schemas
-- **Locks automatically** when any schema has DDL content
-- **Unlocks** when all DDL is cleared or schemas with DDL are removed
-- Triggered on: DDL input, file upload, sample load, schema removal
-
----
-
-### 7. PDF Builder (`buildPDF`)
-
-Generates a multi-page A4 PDF using jsPDF. See [PDF_REPORT.md](PDF_REPORT.md).
+No server. No database. No build step. No framework.
 
 ---
 
 ## Data Flow
 
 ```
-User types DDL
-    │
-    ▼
-parseDDL() ── extractTableBody() ── balanced paren walk
-    │
-    ▼
+User Input (DDL + queries + overview + platform)
+       ↓
+parseDDL() — balanced-paren walker
+       ↓
+tables[] — structured representation
+       ↓
 runRules(tables, queries, overview, domain)
-    │
-    ├── Per-table rules (R01–R25)
-    ├── Cross-table rules (R26–R27)
-    └── Query rules (R41–R43)
-    │
-    ▼
-scoreSecs(findings) ── section scores (0–100 each)
-    │
-    ▼
-calcScore(secs) ── weighted composite health score
-    │
-    ▼
-generateSchemaInsight(result) ── strategic recommendations
-    │
-    ▼
-renderAll(result) ── DOM update
-    │
-    └── exportPDF() ── jsPDF 9-section report + Appendix
+       ↓
+findings[] — severity, category, title, description, fix, tags
+       ↓
+scoreSecs(findings) → sectionScores{}
+calcScore(sectionScores) → healthScore (0–100)
+       ↓
+generateSchemaInsight(result) → insightHTML
+detectPlatformMismatch(tables, platform) → mismatches[]
+       ↓
+renderAll(result) → populates all 6 result tabs
+buildERDiagram(result) → SVG string
 ```
+
+---
+
+## DDL Parser
+
+### `extractTableBody(ddl, start)`
+A balanced-parenthesis walker that correctly handles:
+- Nested function calls: `DEFAULT gen_random_uuid()`, `DEFAULT NOW()`
+- Inline `REFERENCES table(column)` syntax
+- `CREATE TABLE IF NOT EXISTS`
+- Quoted identifiers: backtick, double-quote, square bracket
+
+### `parseDDL(ddl) → tables[]`
+Returns an array of table objects:
+```javascript
+{
+  name: 'users',
+  columns: [
+    {
+      name: 'id',
+      type: 'SERIAL',
+      nullable: false,
+      hasPK: true,
+      hasUnique: false,
+      hasDefault: true,
+      autoInc: true,
+      rawType: 'SERIAL'  // preserves original with (n) for length checks
+    }
+  ],
+  constraints: {
+    pk: true,
+    fks: [{ col: 'tenant_id', ref: 'tenants', onDelete: 'CASCADE' }],
+    uniques: ['email'],
+    checks: ['status IN (...)']
+  }
+}
+```
+
+---
+
+## Rule Engine
+
+### `runRules(tables, queries, overview, domain) → findings[]`
+
+50+ rules grouped by category. Each rule uses the `add()` helper:
+```javascript
+add(severity, category, title, table, description, fix, tags)
+```
+
+**Rule groups:**
+1. Per-table structural rules (R01–R07)
+2. Per-column security rules (R09–R14)
+3. Per-column naming rules (R20–R26, N8)
+4. Per-column integrity rules (R05, N6)
+5. Per-column normalization rules (R15–R17, N7)
+6. Per-column operational rules (R33–R34, N9)
+7. Per-column performance rules (R38–R41)
+8. New rules — N1–N9 (per-table/column)
+9. Cross-table relationship rules (R27–R32, N2, N3, N5)
+10. Domain/SaaS rules (N4, N10)
+11. Query analysis rules (R42–R44, if queries submitted)
+12. Platform mismatch detection (advisory, no score impact)
+
+---
+
+## Scoring Engine
+
+### `scoreSecs(findings) → sectionScores{}`
+Maps findings to sections and calculates section scores:
+```javascript
+Section Score = max(0, 100 − Σ(penalty × domain_multiplier))
+```
+
+### `calcScore(sectionScores) → healthScore`
+Weighted composite:
+```javascript
+(Integrity × 0.25) + (Normalization × 0.20) + (Schema & Arch × 0.20) +
+(Security × 0.15) + (Indexing × 0.10) + (Relationships × 0.10)
+```
+
+---
+
+## Tab System — TAB_RENDERERS Registry
+
+```javascript
+const TAB_RENDERERS = {
+  ts:    (r) => renderSummaryTab(r),
+  tc:    (r) => renderComparisonTab(r),
+  tdiag: (r) => renderDiagramTab(r),
+};
+
+function swTab(tp, btn) {
+  // ... activate tab UI ...
+  if (result && TAB_RENDERERS[tp]) TAB_RENDERERS[tp](result);
+}
+```
+
+Every registered tab re-renders fresh on every activation — no stale DOM state.
+
+**All render functions are self-contained** — they define all required variables
+internally and do not depend on outer scope variables.
+
+---
+
+## ER Diagram Engine
+
+### `buildERDiagram(result) → { svg, svgW, svgH, count }`
+
+**Layout strategies:**
+- ≤50 tables → `layoutSugiyama()` — topological layered layout
+- 51+ tables → `layoutClusters()` — group by schema, grid within clusters
+
+**Edge types:**
+- Explicit FK (from `constraints.fks`) → solid line, 1.8px, opacity 0.75
+- Inferred FK (column ends in `_id`, name matches a table) → dashed line, 1.2px, opacity 0.45
+- No duplicate edges — explicit trumps inferred for same table pair
+
+**Column icons:**
+- 🔑 PK columns — gold (#D29922)
+- 🔗 FK columns — schema colour
+- ◈ UNIQUE columns — green (#3FB950)
+
+**Interactions:** scroll to zoom (0.2×–3×), drag to pan
+**Export:** SVG (vector), PNG (2× retina via canvas)
+
+---
+
+## Schema Intelligence
+
+### `generateSchemaInsight(result) → insights[]`
+
+Analyses the overall schema shape and returns recommendations:
+- **Single schema:** domain mixing, future schema needs, quality gaps
+- **Multi-schema:** cross-schema comparisons, score deltas, quality gaps, duplicate tables
+
+Rendered as the 🧠 Schema Intelligence card in the Summary tab.
+
+---
+
+## Platform Mismatch Detection
+
+### `detectPlatformMismatch(tables, platform) → mismatches[]`
+
+Checks every column type against the selected platform's incompatible type list.
+Result is attached to `result.platformMismatches` and rendered as an advisory
+warning banner in the Summary tab. No score impact.
+
+---
+
+## PDF Builder
+
+### `buildPDF(result) → jsPDF document`
+
+Uses jsPDF 2.5.1 (loaded from CDN). Sections:
+1. Cover page (title, score, grade, date)
+2. About This Analysis (methodology, catches vs limitations)
+3. S1 — Business Context
+4. S2 — Executive Summary (section scores, charts)
+5. S3 — Schema Inventory
+6. S4 — Security Findings
+7. S5 — Integrity Findings
+8. S6 — Performance Findings
+9. S7 — Multi-Schema Comparison
+10. Appendix — Full findings list
+
+---
+
+## State Management
+
+```javascript
+let schemas = [];   // array of schema objects (DDL, name, platform, queries)
+let result = null;  // last analysis result — populated by runAnalysis()
+let scCtr = 0;      // schema counter for unique IDs
+```
+
+No localStorage, no cookies, no session storage.
+All state is in-memory and cleared on page refresh.
 
 ---
 
 ## File Structure
 
 ```
-db-analyzer/
-├── index.html          # Entire application (~131 KB)
-├── vercel.json         # Vercel routing + security headers
-├── README.md           # Project overview
-├── .gitignore
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── RULE_ENGINE.md
-    ├── SCORING.md
-    ├── PDF_REPORT.md
-    ├── DEPLOYMENT.md
-    ├── CHANGELOG.md
-    └── ROADMAP.md
+index.html
+├── <style>          CSS (custom properties, dark theme)
+├── <body>           HTML structure
+│   ├── .hd          Header bar
+│   ├── .main        Main content
+│   │   ├── Step 1   Business overview + platform selector
+│   │   ├── Step 2   Schema cards (DDL textarea + file upload)
+│   │   ├── Step 3   Analyze button + progress bar
+│   │   └── #res     Results area
+│   │       ├── .tbs Tab buttons
+│   │       └── .tp  Tab panels (ti, ts, tsol, tc, tr, tdiag)
+│   └── footer       HIW banner, footer columns
+└── <script>
+    ├── Constants & config
+    ├── parseDDL()
+    ├── extractTableBody()
+    ├── runRules()         ← 50+ rules
+    ├── scoreSecs()
+    ├── calcScore()
+    ├── PLATFORM_TYPES
+    ├── detectPlatformMismatch()
+    ├── buildERDiagram()
+    ├── layoutSugiyama()
+    ├── layoutClusters()
+    ├── renderDiagramTab()
+    ├── generateSchemaInsight()
+    ├── renderSchemaInsight()
+    ├── TAB_RENDERERS
+    ├── swTab()
+    ├── renderAll()
+    ├── renderSummaryTab()
+    ├── renderComparisonTab()
+    ├── renderSolutionsTab()
+    ├── calcRoadmap()
+    ├── buildPDF()
+    ├── SAMPLES (6 sample schemas)
+    ├── loadSample()
+    ├── runAnalysis()
+    └── init
 ```
-
----
-
-## Privacy & Security
-
-- No `fetch()` calls with user data
-- No `localStorage`, `sessionStorage`, or cookies
-- No analytics or telemetry
-- Vercel headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
-- Fully offline capable after first load
