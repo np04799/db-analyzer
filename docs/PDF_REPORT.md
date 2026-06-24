@@ -1,121 +1,131 @@
-# PDF Report — DB Schema Analyzer v1.0
+# PDF Report — DB Schema Analyzer
 
-The exported PDF is a structured A4 report generated client-side using **jsPDF 2.5.1**. It contains a cover page, 9 numbered sections, and an appendix.
+## Overview
+
+The PDF export generates a professional stakeholder report using **jsPDF 2.5.1**
+loaded from CDN. All PDF generation is client-side — no data leaves the browser.
+
+**Trigger:** "Export PDF Report" button in the results area.
+**Function:** `buildPDF(result)` → downloads `schema_analysis_report.pdf`
 
 ---
 
 ## Report Structure
 
 ### Cover Page
+- Tool name, version badge
+- Health Score (large, colour-coded by grade)
+- Grade (A–F)
+- Schema name(s)
+- Date generated
+- Tagline: "Privacy-first schema analysis — no data transmitted"
 
-| Element | Content |
-|---|---|
-| Title | "Schema Design Review & Best Practice Analysis" |
-| Subtitle | Schema names submitted |
-| Generated date | Current date |
-| KPI tiles | Health Score, Tables, Issues, Critical count, Domain |
-| Privacy notice | "Privacy First — No data stored or transmitted" |
-
----
+### Page 2: About This Analysis
+Explains the methodology to non-technical stakeholders:
+- What the tool is (static linter, not live DB analysis)
+- Two-column layout: ✅ What it reliably catches vs ✗ v1 Limitations
+- "How to rely on it" highlighted box
+- Methodology note (balanced-paren parser, zero data transmission)
 
 ### S1 — Business Context
-
-- Business overview text (as entered)
-- Auto-detected domain with weighting note
-- Schema inventory table (name, platform, tables, columns, findings, score)
-- Analysis scope summary (v1: Schema Only)
-- v2 exclusions notice (data profiling, DB connection)
-
----
+- Business overview text (from Step 1)
+- Domain detected (if any) with multiplier explanation
+- Schema inventory (table names submitted)
 
 ### S2 — Executive Summary
+- Section score bars (colour-coded per category)
+- Finding count by severity (Critical/High/Medium/Low)
+- Grade and total health score
 
-- Finding counts by severity (Critical / High / Medium / Low)
-- Dimensional score bars for all 6 sections
-- Colour-coded progress bars per section
+### S3 — Schema Inventory
+- Per-schema table list with column counts
+- FK relationship summary
 
----
+### S4 — Security Findings
+- All Critical and High security findings
+- Each finding: title, table, description, SQL fix
 
-### S3 — Schema & Architecture
+### S5 — Integrity & Normalization Findings
+- Critical/High integrity and normalization findings
 
-- Entity inventory table (table name, schema, columns, PK status, worst finding)
-- All Architecture / Naming / Operational findings with descriptions and SQL fixes
+### S6 — Performance & Relationship Findings
+- High performance and relationship findings
 
----
+### S7 — Multi-Schema Comparison *(if 2+ schemas)*
+- Side-by-side score comparison table
+- Score delta and grade for each schema
 
-### S4 — Keys & Integrity
-
-- Integrity checklist matrix per table (PK ✓/✗, FK gaps, Email UNIQUE, Data Type issues)
-- All Integrity and Relationship findings with SQL fixes
-
----
-
-### S5 — Normalization & Constraints
-
-- 1NF / 2NF / 3NF assessment table (PASS / VIOLATIONS per form)
-- Affected table names per normal form
-- All Normalization findings with SQL fixes
-
----
-
-### S6 — Query Analysis
-
-- **Skipped notice** if no queries were submitted
-- Query finding count and schema breakdown
-- All Query findings (R41–R43) with SQL fixes
+### Appendix — Full Findings List
+- Complete findings sorted by severity
+- Every finding: severity, category, title, table, fix
 
 ---
 
-### S7 — Schema Comparison
+## PDF Builder Helpers
 
-- **Skipped** if only 1 schema submitted
-- Side-by-side comparison table: Health %, Tables, Cols, Critical, High, Medium, Low, Total
-
----
-
-### S8 — Issue Register
-
-- **Complete list of all findings** sorted by severity (Critical → High → Medium → Low)
-- Each entry includes: severity badge, title, schema › table, description, SQL fix (in green code block)
-
----
-
-### S9 — Remediation Roadmap
-
-- **Phase 1 — Immediate Critical Fixes** (Week 1)
-- **Phase 2 — High Priority Improvements** (Weeks 2–3)
-- **Phase 3 — Medium Term Refactoring** (Month 1–2)
-- **Phase 4 — Optimization & Hardening** (Month 2–3)
-- v2 data profiling notice
+```javascript
+function sf(r, g, b)        // setFillColor shorthand
+function st(r, g, b)        // setTextColor shorthand
+function secBanner(n, title) // section header banner
+function newPage(addHeader)  // add page with optional running header
+function bodyTxt(text, width) // paragraph text with line wrapping
+function subHdr(text)        // sub-section header
+function setPP(n, label)     // update progress bar during build
+```
 
 ---
 
-### Appendix
+## Colour Palette (jsPDF RGB arrays)
 
-- Full list of all 40+ rules applied (R01–R43)
-- v2 preview: data profiling, DB connection, query workload, schema history, team features
+```javascript
+const C = {
+  bg:   [13, 17, 23],    // Dark background
+  s1:   [22, 27, 34],    // Surface 1
+  s2:   [28, 35, 51],    // Surface 2
+  ac:   [45, 140, 255],  // Accent blue
+  ok:   [63, 185, 80],   // Green (good)
+  cr:   [248, 81, 73],   // Red (critical)
+  hi:   [240, 136, 62],  // Orange (high)
+  me:   [210, 153, 34],  // Yellow (medium)
+  lo:   [63, 185, 80],   // Green (low)
+  pv:   [163, 113, 247], // Purple (normalization)
+  tx:   [230, 237, 243], // Primary text
+  t2:   [139, 148, 158], // Secondary text
+  t3:   [110, 118, 129], // Tertiary text
+  b:    [48, 54, 61],    // Border
+  acbg: [20, 40, 70],    // Accent background
+};
+```
 
 ---
 
-## PDF Design Specs
+## Section Colour Map (DC2 for PDF bars)
 
-| Property | Value |
-|---|---|
-| Format | A4 (210mm × 297mm) |
-| Margins | 18mm left, 18mm right |
-| Font | Helvetica (built-in) |
-| Code font | Courier (built-in) |
-| Colour scheme | Dark background (#0D1117) with branded accent colours |
-| Page header | Sticky: "DB SCHEMA ANALYSIS REPORT — v1.0" + schema names + page number |
-| Page footer | "Privacy First — No data stored or transmitted" + Health Score |
-| File name | `DB_Schema_Analysis_{SchemaNames}_{YYYY-MM-DD}.pdf` |
+```javascript
+const DC2 = {
+  'Schema & Architecture': C.ac,   // Blue
+  'Keys & Integrity':      C.cr,   // Red
+  'Normalization':         C.pv,   // Purple
+  'Security':              [255, 107, 107], // Light red
+  'Indexing & Performance': C.hi,  // Orange
+  'Relationships':         C.lo,   // Green
+  'Query Analysis':        C.me,   // Yellow
+};
+```
 
 ---
 
-## Generating the PDF
+## Progress Bar
 
-Click **Export PDF Report** in the results header after completing an analysis. The PDF is generated entirely in the browser — no server upload occurs.
-
-**Generation time:** ~2–5 seconds depending on finding count.
-
-**Note:** PDF generation requires the jsPDF CDN script to be loaded. Works offline only if the CDN was previously cached by the browser.
+During PDF generation, a progress bar shows build stages:
+```
+S1 — Business context... (12%)
+S2 — Executive summary... (25%)
+S3 — Schema inventory... (40%)
+S4 — Security findings... (55%)
+S5 — Integrity findings... (70%)
+S6 — Performance findings... (80%)
+S7 — Comparison... (88%)
+Appendix... (95%)
+Done! (100%)
+```
