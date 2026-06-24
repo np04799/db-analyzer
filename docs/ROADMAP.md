@@ -1,119 +1,126 @@
 # Roadmap — DB Schema Analyzer
 
----
-
-## v1.0 — Current ✅
-
-All v1 features are complete and live. See [CHANGELOG.md](CHANGELOG.md) for full feature list.
-
-**Key constraints of v1:**
-- Schema Only analysis (no live DB connection)
-- No user accounts or persistence
-- No team features
-- Client-side PDF only
-- Single HTML file architecture
+## Current Version: v1.1.0
 
 ---
 
-## v2.0 — Planned
+## ✅ Completed
 
-### Tech Stack Migration
-
-| Layer | v1 | v2 |
-|---|---|---|
-| Frontend | Vanilla HTML/CSS/JS | React + TypeScript |
-| Backend | None | Node.js (Next.js API routes) |
-| Database | None | PostgreSQL |
-| Auth | None | next-auth (Google, GitHub, email) |
-| PDF | jsPDF (client) | Puppeteer or pdfkit (server) |
-| Hosting | Vercel Static | Vercel (full-stack) |
-
----
-
-### Planned Features
-
-#### Data Profiling (requires DB connection)
-- Connect directly to PostgreSQL, MySQL, or SQL Server
-- Auto-extract schema (no DDL needed)
-- Null rate analysis per column
-- Cardinality analysis (high/low cardinality flags)
-- Dead column detection (columns that are always NULL)
-- Value distribution sampling
-- Row count and table size
-
-#### Query Workload Analysis
-- Slow query log import (.csv or direct from `pg_stat_statements`)
-- Index usage statistics (which indexes are actually used)
-- N+1 query pattern detection
-- Most expensive queries ranked by total time
-
-#### Schema History & Tracking
-- Save analysis results per project
-- Track health score over time (trend chart)
-- Before/after comparison when schema changes
-- Export historical reports
-
-#### Team Features
-- User accounts and workspaces
-- Assign findings to team members
-- Mark findings as resolved / won't fix / accepted risk
-- Jira / Linear integration (create tickets from findings)
-- Slack notifications on new analysis
-
-#### Enterprise
-- SSO (SAML, Okta, Azure AD)
-- Role-based access (viewer, analyst, admin)
-- Audit log of who ran what analysis
-- Private deployment (self-hosted Docker)
-- SLA-backed support
-
-#### Expanded Rule Engine
-- Composite index recommendations
-- Partial index opportunities
-- Partition strategy recommendations (range, hash, list)
-- CHECK constraint suggestions
-- Row-level security (RLS) recommendations for multi-tenant schemas
-- JSON/JSONB column anti-patterns (PostgreSQL)
-- Missing cascade rules on FK
-- Circular FK dependency detection
-
-#### UI Improvements
-- Dark/light theme toggle
-- Schema diagram visualisation (entity-relationship diagram auto-generated)
-- Inline SQL editor with syntax highlighting
-- Side-by-side diff view for schema changes
-- Mobile-optimised layout
+- 50+ deterministic rules across 8 categories
+- Health score (A–F) with domain multipliers (Healthcare, Finance, E-commerce, SaaS)
+- Platform mismatch detection (PostgreSQL, MySQL, SQL Server, Oracle, SQLite)
+- ER Diagram tab — pure SVG, Sugiyama layout, FK relationships, zoom/pan, SVG/PNG download
+- Multi-schema support (up to 5), Comparison tab
+- Schema Intelligence card (split/merge recommendations)
+- PDF export (9 sections + About This Analysis page)
+- docs.html — full rule reference, platform guide, scoring formula
+- Sample schemas: E-commerce, Healthcare, SaaS, Legacy ERP, Badly Designed, Multi-Schema
+- Zero backend — 100% client-side, no data transmission
 
 ---
 
-## v3.0 — Future Ideas
+## 🔴 Phase 1 — Free Product Consolidation (Next)
 
-- AI-assisted rule suggestions (LLM analysis of schema context)
-- Natural language query: "Why is my schema slow?" 
-- Migration script generator (generates full ALTER TABLE migration from findings)
-- CI/CD integration (GitHub Action that fails PR if score drops below threshold)
-- Schema registry (store canonical schemas, diff against them)
+### Task 2: ER Diagram Edit Mode B — Drag Tables
+Drag table boxes to reposition them in the ER diagram. Visual only — does not change DDL.
+Pan is already wired via mouse events; table-level drag is a small extension.
 
----
+### Task 3: ER Diagram Edit Mode A — Inline Name Edit
+Click a table or column name in the diagram → edit inline → syncs back to DDL → re-analysis triggered.
+Requires "regenerate DDL from diagram state" function.
 
-## Prioritisation
+### Task 4: Migration Script Generator
+One button that compiles all Critical + High findings into a single `migration.sql` file
+with ALTER TABLE fixes in the correct order (PKs → FKs → indexes).
 
-| Priority | Feature | Effort |
-|---|---|---|
-| P0 | React migration + TypeScript | High |
-| P0 | User auth (next-auth) | Medium |
-| P0 | Schema history (PostgreSQL) | Medium |
-| P1 | Direct DB connection | High |
-| P1 | Team features + assignments | High |
-| P1 | Jira/Linear integration | Medium |
-| P2 | Data profiling | High |
-| P2 | Query workload analysis | High |
-| P3 | SSO + enterprise | High |
-| P3 | Schema diagram visualisation | Medium |
+### Task 5: Schema Diff
+Paste v1 + v2 of a schema → see what changed, what new issues were introduced,
+what was fixed, and the score delta. Client-side diff, no backend required.
 
 ---
 
-## Contribution
+## 🟠 Phase 2 — Protect + Capture Demand
 
-To propose a new rule or feature, open an issue on GitHub:
-https://github.com/np04799/db-analyzer/issues
+### Task 6: JS Obfuscation
+Run the JS through `javascript-obfuscator` to protect the 50+ rule engine.
+Reserve all onclick function names to prevent button breakage.
+
+### Task 7: Email Waitlist Capture
+Add a "Pro coming soon" banner with email capture to the live site.
+Builds the waitlist before the paid tier launches.
+
+### Task 8: Compliance Rule Sets (HIPAA / PCI-DSS / GDPR)
+Domain-specific compliance checks beyond current domain multipliers:
+- HIPAA: PHI column encryption, audit trail required, minimum necessary access
+- PCI-DSS: No card storage, tokenisation required, network segmentation hints
+- GDPR: Right to erasure (soft delete), consent tracking, data retention columns
+
+### Task 9: Export Findings as CSV
+One-click export of all findings as CSV for Jira/Linear bulk import.
+
+### Task 10: Copy All Fixes Per Section
+In Summary tab, a "Copy all fixes" button per section generates a bulk SQL block.
+
+---
+
+## 🟢 Phase 3 — Monetisation
+
+### Task 11: Pro Tier ($19/mo)
+Gate: score history, shareable results link, CSV export, compliance rules, schema diff.
+
+### Task 12: Team Tier ($79/mo)
+Gate: team workspace, custom rule builder, CI/CD GitHub Action snippet.
+
+### Task 13: Shareable Results Link
+Encode analysis result in URL hash (base64 compressed). No backend required.
+
+### Task 14: Score History (localStorage)
+Remember last 30 analysis runs. Show trend: `Last: 67 → Today: 78 ↑11`.
+
+### Task 15: Dark/Light Theme Toggle
+CSS variable swap. Broader appeal for light-mode users.
+
+---
+
+## 🟡 Lower Priority
+
+| # | Task |
+|---|------|
+| 16 | GitHub Action CI/CD snippet (YAML for PR gates) |
+| 17 | Print-friendly CSS (`@media print`) |
+| 18 | Update docs.html with new rules and features |
+| 19 | Regenerate PPT decks with v1.1 features |
+| 20 | Redundant index detection rule |
+| 21 | Nullable unique constraint rule |
+| 22 | Column/table search/grep across schema |
+| 23 | Orphan table dedicated report |
+| 24 | Data classification tagging (PII/PHI/Financial/Public) |
+| 25 | Per-table drill-down in Issues tab |
+
+---
+
+## 🔵 v2 — Backend Required
+
+| # | Feature |
+|---|---------|
+| 26 | Direct DB connection (PostgreSQL/MySQL via connection string) |
+| 27 | Data profiling (null rates, cardinality, dead column detection) |
+| 28 | Team features + Jira/Linear integration |
+| 29 | Schema history + versioning |
+| 30 | React + TypeScript migration |
+| 31 | SSO + Enterprise auth (SAML, Okta) |
+| 32 | REST API Analyzer — separate product (OpenAPI YAML input) |
+
+---
+
+## Monetisation Strategy
+
+**Free forever:** Core analysis (50+ rules), ER diagram, PDF export, all sample schemas
+
+**Pro ($19/mo):** Score history, shareable link, CSV export, compliance rules, schema diff
+
+**Team ($79/mo):** Team workspace, custom rules, CI/CD integration, priority support
+
+**Enterprise ($2,000/yr):** Self-hosted Docker, custom rule sets, SSO, audit logs, SLA
+
+Target market: Healthcare, Finance, SaaS engineering teams — highest WTP for compliance features.
