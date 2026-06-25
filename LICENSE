@@ -1,0 +1,37 @@
+DB Schema Analyzer — Source Available License
+=============================================
+
+Copyright © 2026 DB Schema Analyzer. All rights reserved.
+
+PERMITTED USES
+--------------
+You may:
+  - View this source code for personal, educational, or non-commercial reference
+  - Run the tool locally for personal use
+  - Link to the live tool at https://db-analyzer-two.vercel.app/
+
+PROHIBITED USES
+---------------
+You may NOT, without prior written permission:
+  - Copy, reproduce, or redistribute this source code or substantial portions of it
+  - Fork this repository for commercial purposes
+  - Use the rule engine, scoring algorithm, or analysis logic in any competing product
+  - Remove or modify copyright notices or license terms
+  - Deobfuscate, reverse-engineer, or attempt to extract the protected rule logic
+  - Sell, sublicense, or transfer any rights to this software
+
+PROPRIETARY COMPONENTS
+-----------------------
+The following components are proprietary and additionally protected by obfuscation:
+  - The rule engine (50+ schema analysis rules)
+  - The scoring algorithm and domain multipliers
+  - The platform mismatch detection logic
+  - The Schema Intelligence recommendations engine
+
+DISCLAIMER
+----------
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+THE AUTHORS SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM USE OF THIS SOFTWARE.
+
+For licensing inquiries or permissions beyond this license, please open an issue at:
+https://github.com/np04799/db-analyzer/issues
