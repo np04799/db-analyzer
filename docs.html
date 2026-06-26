@@ -3,29 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Documentation — DB Schema Analyzer</title>
+<title>Documentation — dbpulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0D1117;--s1:#161B22;--s2:#1C2333;--s3:#21262D;
-  --ac:#2D8CFF;--ok:#3FB950;--cr:#F85149;--hi:#F0883E;--me:#D29922;--pv:#A371F7;
-  --tx:#E6EDF3;--t2:#8B949E;--t3:#6E7681;--b:#30363D;
+  --bg:#080b0f;--s1:#0c1217;--s2:#0f1820;--s3:#131e28;
+  --ac:#4ade80;--ac2:#22c55e;--acbg:rgba(74,222,128,.08);
+  --ok:#3fb950;--cr:#f87171;--hi:#fbbf24;--me:#a78bfa;--pv:#a78bfa;
+  --tx:#f4f8fb;--t2:#c7d2db;--t3:#9aa7b2;--b:#1b2530;--b2:#243040;
   --r:6px;--rl:10px;--tr:.15s ease;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
 }
 html{font-size:16px;scroll-behavior:smooth}
-body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6}
+body{background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;line-height:1.6}
 
 /* HEADER */
-.hdr{background:var(--s1);border-bottom:1px solid var(--b);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.hdr-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx)}
+.hdr{background:var(--s1);border-bottom:1px solid var(--b);padding:0 24px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx)}
 .hdr-brand svg{color:var(--ac)}
-.hdr-brand strong{font-size:15px}
-.hdr-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(45,140,255,.12);color:var(--ac);border:1px solid rgba(45,140,255,.2);font-weight:600}
+.hdr-brand strong{font-size:15px;font-family:var(--font-display);font-weight:700}
+.hdr-brand strong .ac{color:var(--ac)}
+.hdr-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--acbg);color:var(--ac);border:1px solid rgba(74,222,128,.2);font-weight:600}
 .hdr-nav{display:flex;align-items:center;gap:6px}
 .hdr-nav a{font-size:12px;color:var(--t2);text-decoration:none;padding:5px 10px;border-radius:var(--r);transition:all var(--tr)}
 .hdr-nav a:hover{color:var(--tx);background:var(--s2)}
-.hdr-nav .btn{background:var(--ac);color:#fff;font-weight:600}
-.hdr-nav .btn:hover{background:#1a7aef;color:#fff}
+.hdr-nav .btn{background:var(--ac);color:#06210f;font-weight:700}
+.hdr-nav .btn:hover{background:var(--ac2);color:#06210f}
 
 /* LAYOUT */
 .layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 52px);max-width:1400px;margin:0 auto}
@@ -36,7 +41,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSyst
 .sidebar-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:0 16px;margin-bottom:6px}
 .sidebar a{display:block;padding:5px 16px;font-size:13px;color:var(--t2);text-decoration:none;border-left:2px solid transparent;transition:all var(--tr)}
 .sidebar a:hover{color:var(--tx);background:var(--s2);border-left-color:var(--ac)}
-.sidebar a.active{color:var(--ac);border-left-color:var(--ac);background:rgba(45,140,255,.06)}
+.sidebar a.active{color:var(--ac);border-left-color:var(--ac);background:var(--acbg)}
 
 /* MAIN */
 .main{padding:36px 48px;max-width:960px}
@@ -118,15 +123,15 @@ pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
 <header class="hdr">
   <a href="/" class="hdr-brand">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-    <strong>DB Schema Analyzer</strong>
+    <strong>db<span class="ac">pulse</span></strong>
     <span class="hdr-badge">v1.0</span>
   </a>
   <nav class="hdr-nav">
-    <a href="/">← Back to Tool</a>
+    <a href="/">← Home</a>
     <a href="#rules">Rules</a>
     <a href="#platforms">Platforms</a>
     <a href="#scoring">Scoring</a>
-    <a href="/" class="btn">Launch Tool</a>
+    <a href="/app" class="btn">Launch Tool</a>
   </nav>
 </header>
 
@@ -182,7 +187,7 @@ pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
 
   <!-- OVERVIEW -->
   <section id="overview">
-    <h1>DB Schema Analyzer Documentation</h1>
+    <h1>dbpulse Documentation</h1>
     <p class="subtitle">Complete reference for all 40+ rules, platform-specific checks, scoring formula, and methodology.</p>
 
     <div class="toc">
@@ -206,7 +211,7 @@ pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
   <!-- HOW IT WORKS -->
   <section id="how-it-works">
     <h2>How It Works</h2>
-    <p>DB Schema Analyzer is a <strong>rule-based static linter for database schemas</strong>. It works the same way ESLint catches code bugs without running your program — by analysing the structure of your DDL without connecting to a live database.</p>
+    <p>dbpulse is a <strong>rule-based static linter for database schemas</strong>. It works the same way ESLint catches code bugs without running your program — by analysing the structure of your DDL without connecting to a live database.</p>
 
     <h3>Analysis Pipeline</h3>
     <pre><code>Your CREATE TABLE DDL
@@ -647,7 +652,7 @@ pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
     <h2>v1 Limitations</h2>
     <div class="info-box orange">
       <strong>Static analysis only</strong>
-      DB Schema Analyzer v1 analyses DDL structure only. It does not connect to a live database and cannot inspect actual data.
+      dbpulse v1 analyses DDL structure only. It does not connect to a live database and cannot inspect actual data.
     </div>
     <table class="rule-table">
       <thead><tr><th>Limitation</th><th>Detail</th><th>Planned in v2</th></tr></thead>
@@ -690,13 +695,13 @@ pre code{background:none;padding:0;font-size:12px;color:var(--t2)}
   </section>
 
   <div class="divider"></div>
-  <p style="font-size:12px;color:var(--t3);text-align:center">DB Schema Analyzer v1.0 · Rule-based static schema analysis · <a href="/" style="color:var(--ac)">Launch Tool →</a></p>
+  <p style="font-size:12px;color:var(--t3);text-align:center">dbpulse v1.0 · Rule-based static schema analysis · <a href="/app" style="color:var(--ac)">Launch Tool →</a></p>
 
 </main>
 </div>
 
 <footer class="ft">
-  DB Schema Analyzer v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted &nbsp;·&nbsp; <a href="/">← Back to Tool</a>
+  dbpulse &nbsp;·&nbsp; v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted &nbsp;·&nbsp; <a href="/" style="color:var(--ac)">← Home</a>
 </footer>
 
 <script>
