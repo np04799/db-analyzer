@@ -422,18 +422,19 @@ footer{position:relative;z-index:4;border-top:1px solid var(--bd)}
       <!-- Score readout -->
       <div class="vitals-readout">
         <div style="display:flex;align-items:baseline;gap:6px">
-          <span class="vitals-score-num">62</span>
+          <span class="vitals-score-num" id="v-score">62</span>
           <span class="vitals-score-denom">/100</span>
         </div>
         <div style="flex:1">
           <div class="vitals-score-label">HEALTH SCORE</div>
           <div class="vitals-score-status">
-            <span class="vitals-score-status-dot" aria-hidden="true"></span>Needs attention
+            <span class="vitals-score-status-dot" id="v-status-dot" aria-hidden="true"></span>
+            <span id="v-status">Needs attention</span>
           </div>
         </div>
         <div class="vitals-counts">
-          <div class="vitals-critical">● 2 critical</div>
-          <div class="vitals-warning">● 3 warnings</div>
+          <div class="vitals-critical">● <span id="v-critical">2</span> critical</div>
+          <div class="vitals-warning">● <span id="v-warning">3</span> warnings</div>
         </div>
       </div>
 
@@ -442,30 +443,30 @@ footer{position:relative;z-index:4;border-top:1px solid var(--bd)}
         <div class="vitals-gauge">
           <div class="vitals-gauge-row">
             <span class="vitals-gauge-label">Integrity</span>
-            <span class="vitals-gauge-val" style="color:var(--critical)">45</span>
+            <span class="vitals-gauge-val" id="v-int-val" style="color:var(--critical)">45</span>
           </div>
-          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" style="width:45%;background:var(--critical)"></div></div>
+          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" id="v-int-fill" style="width:45%;background:var(--critical)"></div></div>
         </div>
         <div class="vitals-gauge">
           <div class="vitals-gauge-row">
             <span class="vitals-gauge-label">Security</span>
-            <span class="vitals-gauge-val" style="color:var(--warning)">58</span>
+            <span class="vitals-gauge-val" id="v-sec-val" style="color:var(--warning)">58</span>
           </div>
-          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" style="width:58%;background:var(--warning)"></div></div>
+          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" id="v-sec-fill" style="width:58%;background:var(--warning)"></div></div>
         </div>
         <div class="vitals-gauge">
           <div class="vitals-gauge-row">
             <span class="vitals-gauge-label">Normalization</span>
-            <span class="vitals-gauge-val" style="color:var(--accent)">82</span>
+            <span class="vitals-gauge-val" id="v-norm-val" style="color:var(--accent)">82</span>
           </div>
-          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" style="width:82%;background:var(--accent)"></div></div>
+          <div class="vitals-gauge-track"><div class="vitals-gauge-fill" id="v-norm-fill" style="width:82%;background:var(--accent)"></div></div>
         </div>
       </div>
 
       <!-- Top finding -->
       <div class="vitals-finding">
         <span class="finding-badge">TOP FINDING</span>
-        <span class="finding-text">No <b>PRIMARY KEY</b> on <code>users</code></span>
+        <span class="finding-text" id="v-finding">No <b>PRIMARY KEY</b> on <code>users</code></span>
       </div>
     </div>
   </header>
@@ -871,6 +872,109 @@ function toggleTheme(){
 (function(){
   const saved = localStorage.getItem('dbpulse-theme');
   if(saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+// Dynamic vitals — synced to EKG 3.4s cycle
+(function(){
+  const EKG_CYCLE = 3400; // ms — must match CSS animation duration
+
+  const STATES = [
+    {
+      score:62, status:'Needs attention', statusColor:'var(--warning)',
+      critical:2, warnings:3,
+      integrity:{val:45,color:'var(--critical)'}, security:{val:58,color:'var(--warning)'}, normalization:{val:82,color:'var(--accent)'},
+      finding:'No <b>PRIMARY KEY</b> on <code>users</code>'
+    },
+    {
+      score:34, status:'Critical issues', statusColor:'var(--critical)',
+      critical:5, warnings:2,
+      integrity:{val:28,color:'var(--critical)'}, security:{val:31,color:'var(--critical)'}, normalization:{val:44,color:'var(--warning)'},
+      finding:'Plaintext <b>password</b> column detected'
+    },
+    {
+      score:71, status:'Good baseline', statusColor:'#38bdf8',
+      critical:1, warnings:4,
+      integrity:{val:68,color:'var(--warning)'}, security:{val:74,color:'var(--accent)'}, normalization:{val:71,color:'var(--warning)'},
+      finding:'Missing FK index on <code>order_id</code>'
+    },
+    {
+      score:88, status:'Looking healthy', statusColor:'var(--accent)',
+      critical:0, warnings:1,
+      integrity:{val:91,color:'var(--accent)'}, security:{val:88,color:'var(--accent)'}, normalization:{val:85,color:'var(--accent)'},
+      finding:'Consider <b>audit timestamps</b> on orders'
+    }
+  ];
+
+  let stateIdx = 0;
+
+  function scoreColor(val){
+    if(val < 50) return 'var(--critical)';
+    if(val < 70) return 'var(--warning)';
+    return 'var(--accent)';
+  }
+
+  function countTo(el, from, to, duration){
+    const start = performance.now();
+    const diff = to - from;
+    function step(now){
+      const t = Math.min((now - start) / duration, 1);
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      el.textContent = Math.round(from + diff * ease);
+      if(t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function applyState(s){
+    const scoreEl   = document.getElementById('v-score');
+    const statusEl  = document.getElementById('v-status');
+    const statusDot = document.getElementById('v-status-dot');
+    const critEl    = document.getElementById('v-critical');
+    const warnEl    = document.getElementById('v-warning');
+    const intVal    = document.getElementById('v-int-val');
+    const intFill   = document.getElementById('v-int-fill');
+    const secVal    = document.getElementById('v-sec-val');
+    const secFill   = document.getElementById('v-sec-fill');
+    const normVal   = document.getElementById('v-norm-val');
+    const normFill  = document.getElementById('v-norm-fill');
+    const findEl    = document.getElementById('v-finding');
+    if(!scoreEl) return;
+
+    const prevScore = parseInt(scoreEl.textContent) || 0;
+    countTo(scoreEl, prevScore, s.score, 600);
+    scoreEl.style.color = scoreColor(s.score);
+
+    statusEl.textContent = s.status;
+    statusDot.style.background = s.statusColor;
+    statusEl.parentElement.style.color = s.statusColor;
+
+    countTo(critEl, parseInt(critEl.textContent)||0, s.critical, 500);
+    countTo(warnEl, parseInt(warnEl.textContent)||0, s.warnings, 500);
+
+    // Gauges
+    [[intVal,intFill,s.integrity],[secVal,secFill,s.security],[normVal,normFill,s.normalization]].forEach(([valEl,fillEl,data])=>{
+      const prev = parseInt(valEl.textContent)||0;
+      countTo(valEl, prev, data.val, 600);
+      valEl.style.color = data.color;
+      fillEl.style.transition = 'width 0.6s ease, background 0.4s';
+      fillEl.style.width = data.val + '%';
+      fillEl.style.background = data.color;
+    });
+
+    findEl.innerHTML = s.finding;
+  }
+
+  // Trigger on each EKG cycle completion — offset slightly so update lands as dot restarts
+  function tick(){
+    stateIdx = (stateIdx + 1) % STATES.length;
+    applyState(STATES[stateIdx]);
+  }
+
+  // Align first tick to animation restart
+  setTimeout(function loop(){
+    tick();
+    setTimeout(loop, EKG_CYCLE);
+  }, EKG_CYCLE);
 })();
 </script>
 </body>
