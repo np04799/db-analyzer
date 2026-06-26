@@ -1,53 +1,28 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "docs.html",
-      "use": "@vercel/static"
-    }
+    { "src": "landing.html", "use": "@vercel/static" },
+    { "src": "index.html",   "use": "@vercel/static" },
+    { "src": "docs.html",    "use": "@vercel/static" }
   ],
   "routes": [
-    {
-      "src": "/docs.html",
-      "dest": "/docs.html"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/docs.html",   "dest": "/docs.html" },
+    { "src": "/docs",        "dest": "/docs.html" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/app",         "dest": "/index.html" },
+    { "src": "/app/(.*)",    "dest": "/index.html" },
+    { "src": "/",            "dest": "/landing.html" },
+    { "src": "/(.*)",        "dest": "/landing.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
+        { "key": "Cache-Control",            "value": "public, max-age=3600" }
       ]
     }
   ]
