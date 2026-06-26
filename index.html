@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DB Schema Analyzer — v1.0</title>
+<title>dbpulse — Schema Analyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -96,9 +96,10 @@ body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,system-ui,sans
 .diag-cluster-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-bottom:6px}
 
 /* HEADER */
-.hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 20px;gap:10px}
-.hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;font-family:var(--font-display);color:var(--tx);text-decoration:none}
-.hd-logo svg{color:var(--ac)}
+.hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 16px;gap:10px;overflow:hidden}
+.hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;font-family:var(--font-display);color:var(--tx);text-decoration:none;white-space:nowrap}
+.hd-logo svg{color:var(--ac);flex-shrink:0}
+.hd-logo .ac{color:var(--ac)}
 .tag{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
 .tag-v{background:var(--acbg);color:var(--ac);border:1px solid rgba(74,222,128,.2)}
 .tag-e{background:rgba(63,185,80,.1);color:var(--ok);border:1px solid rgba(63,185,80,.2)}
@@ -344,22 +345,14 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .ppw{height:4px;background:var(--b);border-radius:2px;overflow:hidden}
 .ppf{height:100%;background:var(--cr);border-radius:2px;transition:width .3s ease}
 
-@media(max-width:700px){.lay{grid-template-columns:1fr}.nav{display:none}.mn{padding:14px}}
+@media(max-width:700px){.lay{grid-template-columns:1fr}.nav{display:none}.mn{padding:12px 14px}.tag-e,.tag-s{display:none}.prv{display:none}}
 
 /* FOOTER */
-.ft{background:var(--s1);border-top:1px solid var(--b);padding:28px 32px;margin-top:auto}
-.ft-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
-.ft-brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:8px}
-.ft-brand svg{color:var(--ac)}
-.ft-desc{font-size:12px;color:var(--t2);line-height:1.7;max-width:280px}
-.ft-col h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:10px}
-.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:5px}
-.ft-col ul li{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px}
-.ft-col ul li::before{content:'→';color:var(--ac);font-size:10px;flex-shrink:0}
-.ft-bottom{max-width:1100px;margin:16px auto 0;padding-top:14px;border-top:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ft{background:var(--s1);border-top:1px solid var(--b);padding:16px 24px}
+.ft-bottom{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .ft-bottom p{font-size:11px;color:var(--t3)}
 .ft-badge{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);color:var(--ok);font-size:10px;font-weight:600}
-@media(max-width:700px){.ft-inner{grid-template-columns:1fr}.ft{padding:20px 16px}}
+@media(max-width:700px){.ft{padding:14px 16px}.ft-bottom{flex-direction:column;align-items:flex-start;gap:6px}}
 </style>
 </head>
 <body>
@@ -369,7 +362,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
   <a href="/" style="display:flex;align-items:center;gap:5px;color:var(--t3);font-size:12px;font-family:var(--font-mono);text-decoration:none;padding:4px 8px;border-radius:5px;border:1px solid var(--b);margin-right:4px;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s" onmouseover="this.style.color='var(--tx)';this.style.borderColor='var(--b2)'" onmouseout="this.style.color='var(--t3)';this.style.borderColor='var(--b)'"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Home</a>
   <a href="#" class="hd-logo">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-    DB Schema Analyzer
+    <span>db<span class="ac">pulse</span></span>
   </a>
   <span class="tag tag-v">v1.0</span>
   <span class="tag tag-e">Rule Engine</span>
@@ -382,63 +375,6 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
   </div>
 </header>
 
-<!-- OVERVIEW STRIP -->
-<div class="ovw">
-  <div class="ovw-inner">
-
-    <!-- LEFT: Steps navigation — commented out, already in left nav -->
-    <!--
-    <div class="ovw-steps">...</div>
-    <div class="ovw-divider"></div>
-    -->
-
-    <!-- CENTER: What is it + horizontal steps below -->
-    <div class="ovw-text">
-      <h2>What is DB Schema Analyzer?</h2>
-      <p>A free, privacy-first tool that reviews your database schema design instantly — right in the browser. Paste your <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--ac)">CREATE TABLE</code> statements and get a scored report covering integrity, security, normalization, naming, relationships, and query patterns — with specific SQL fixes for every issue found.</p>
-      <div class="ovw-badges">
-        <span class="ovw-badge" style="background:rgba(74,222,128,.08);color:var(--ac);border-color:rgba(74,222,128,.2)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          No data leaves your browser
-        </span>
-        <span class="ovw-badge" style="background:rgba(63,185,80,.08);color:var(--ok);border-color:rgba(63,185,80,.2)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          40+ rule checks
-        </span>
-        <span class="ovw-badge" style="background:rgba(163,113,247,.08);color:var(--pv);border-color:rgba(163,113,247,.2)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          No account needed
-        </span>
-        <span class="ovw-badge" style="background:rgba(210,153,34,.08);color:var(--me);border-color:rgba(210,153,34,.2)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Works offline
-        </span>
-        <span class="ovw-badge" style="background:rgba(248,81,73,.08);color:var(--cr);border-color:rgba(248,81,73,.2)">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          PDF report export
-        </span>
-      </div>
-      <!-- Horizontal steps below the description -->
-      <div class="ovw-hsteps">
-        <div class="ovw-hstep">
-          <div class="ovw-step-num" style="background:rgba(74,222,128,.15);color:var(--ac);border-color:rgba(74,222,128,.25)">1</div>
-          <div class="ovw-step-txt"><strong>Business Overview</strong><span>Describe system &amp; pick platform</span></div>
-        </div>
-        <div class="ovw-harr">→</div>
-        <div class="ovw-hstep">
-          <div class="ovw-step-num" style="background:rgba(63,185,80,.15);color:var(--ok);border-color:rgba(63,185,80,.25)">2</div>
-          <div class="ovw-step-txt"><strong>Schemas &amp; Queries</strong><span>Paste DDL or upload .sql</span></div>
-        </div>
-        <div class="ovw-harr">→</div>
-        <div class="ovw-hstep">
-          <div class="ovw-step-num" style="background:rgba(163,113,247,.15);color:var(--pv);border-color:rgba(163,113,247,.25)">3</div>
-          <div class="ovw-step-txt"><strong>Analyze &amp; Export</strong><span>Scored report + PDF</span></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <div class="lay">
   <!-- NAV removed — single column layout -->
@@ -652,7 +588,7 @@ const a0_0x2c9dd3=a0_0xf191;(function(_0x354810,_0x1c2fda){const _0x2d4e39=a0_0x
 
 <!-- HOW IT WORKS BANNER -->
 <div class="hiw">
-  <div class="hiw-heading"><a href="https://raw.githubusercontent.com/np04799/db-analyzer/main/assets/DB_Schema_Analyzer_Presentations.zip" download title="Download both PPT presentations (full deck + one-pager)">How It Works <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>
+  <div class="hiw-heading">How It Works</div>
   <div class="hiw-inner">
     <div class="hiw-step">
       <div class="hiw-num" style="background:rgba(74,222,128,.15);color:var(--ac)">①</div>
@@ -683,40 +619,8 @@ const a0_0x2c9dd3=a0_0xf191;(function(_0x354810,_0x1c2fda){const _0x2d4e39=a0_0x
 
 <!-- FOOTER -->
 <footer class="ft">
-  <div class="ft-inner">
-    <div>
-      <div class="ft-brand">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-        DB Schema Analyzer
-      </div>
-      <p class="ft-desc" style="margin-top:6px">Free · Privacy-first · No account required · Works offline</p>
-      <p class="ft-desc" style="margin-top:4px;font-size:11px;color:var(--t3)">v1.0 — Rule Engine · Schema Only · Client-side analysis</p>
-    </div>
-    <div class="ft-col">
-      <h4>What It Analyzes</h4>
-      <ul>
-        <li>Primary keys &amp; foreign key integrity</li>
-        <li>Normalization (1NF · 2NF · 3NF)</li>
-        <li>Security posture &amp; PII exposure</li>
-        <li>Naming conventions &amp; reserved words</li>
-        <li>Missing indexes on FK columns</li>
-        <li>Query anti-patterns (SELECT *, no WHERE)</li>
-      </ul>
-    </div>
-    <div class="ft-col">
-      <h4>Supported Platforms</h4>
-      <ul>
-        <li>PostgreSQL</li>
-        <li>MySQL &amp; MariaDB</li>
-        <li>Microsoft SQL Server</li>
-        <li>Oracle Database</li>
-        <li>SQLite</li>
-        <li>Generic SQL (ANSI)</li>
-      </ul>
-    </div>
-  </div>
   <div class="ft-bottom">
-    <p>DB Schema Analyzer v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted &nbsp;·&nbsp; <a href="/docs.html" target="_blank" style="color:var(--ac);text-decoration:none;font-weight:600">📖 Documentation</a></p>
+    <p>dbpulse &nbsp;·&nbsp; v1.0 &nbsp;·&nbsp; 40+ rules &nbsp;·&nbsp; Client-side only &nbsp;·&nbsp; No data stored or transmitted &nbsp;·&nbsp; <a href="/docs.html" target="_blank" style="color:var(--ac);text-decoration:none;font-weight:600">📖 Docs</a></p>
     <div class="ft-badge">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Privacy First
