@@ -28,6 +28,49 @@
   --font-body:'IBM Plex Sans',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',monospace;
 }
+[data-theme="light"]{
+  --accent:#16a34a;
+  --pg:#f5f7fa;
+  --tx:#0f172a;
+  --tx2:#1e293b;
+  --tx3:#475569;
+  --tx4:#94a3b8;
+  --bd:#d1dce8;
+  --card:#ffffff;
+  --band:rgba(0,0,0,.03);
+  --band2:rgba(0,0,0,.06);
+  --critical:#dc2626;
+  --warning:#d97706;
+}
+[data-theme="light"] body{background:var(--pg)}
+[data-theme="light"] .nav{background:rgba(245,247,250,.92)}
+[data-theme="light"] .nav-logo-mark rect{fill:#fff}
+[data-theme="light"] .nav-logo-mark path:nth-child(3),[data-theme="light"] .nav-logo-mark path:nth-child(4){stroke:#c8d5e2}
+[data-theme="light"] .report-card{background:linear-gradient(135deg,#f0f4f8,#e8eef4);border-color:#d1dce8}
+[data-theme="light"] .report-visual{background:linear-gradient(135deg,#e8eef4,#eef2f7);border-left-color:#d1dce8}
+[data-theme="light"] .report-section-card{background:rgba(255,255,255,.7);border-color:#d1dce8}
+[data-theme="light"] .ba-panel.before{background:linear-gradient(135deg,#fff0f0,#fff5f5);border-right-color:#fcd0d0}
+[data-theme="light"] .ba-panel.after{background:linear-gradient(135deg,#f0fdf4,#f5fff7)}
+[data-theme="light"] .ba-code{background:rgba(0,0,0,.04);border-color:#e2e8f0;color:#334155}
+[data-theme="light"] .ba-code .kw{color:#0369a1}
+[data-theme="light"] .ba-code .tbl{color:#0f172a}
+[data-theme="light"] .ba-code .col{color:#1e293b}
+[data-theme="light"] .ba-code .type{color:#7c3aed}
+[data-theme="light"] .ba-score{background:rgba(0,0,0,.04);border-color:rgba(220,38,38,.2)}
+[data-theme="light"] .ba-score-val,[data-theme="light"] .ba-score-grade{color:#dc2626}
+[data-theme="light"] .cta-card{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,#f5f7fa),#eef2f7)}
+[data-theme="light"] .report-lock-overlay{background:linear-gradient(to bottom,transparent 30%,rgba(240,244,248,.97) 65%)}
+[data-theme="light"] ::selection{background:rgba(22,163,74,.2)}
+
+/* THEME TOGGLE */
+.theme-toggle{width:36px;height:36px;border-radius:9px;border:1px solid var(--bd);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s,background .15s;flex-shrink:0;margin-right:8px}
+.theme-toggle:hover{border-color:var(--accent)}
+.theme-toggle svg{color:var(--tx3);transition:color .15s}
+.theme-toggle:hover svg{color:var(--tx)}
+.icon-sun{display:none}
+.icon-moon{display:block}
+[data-theme="light"] .icon-sun{display:block}
+[data-theme="light"] .icon-moon{display:none}
 html{scroll-behavior:smooth;font-size:16px}
 body{background:var(--pg);color:var(--tx2);font-family:var(--font-body);line-height:1.6;overflow-x:hidden;min-height:100%}
 ::selection{background:rgba(74,222,128,.25)}
@@ -140,7 +183,7 @@ section[id]{scroll-margin-top:90px}
 /* ── HOW IT WORKS ── */
 .hiw{position:relative;z-index:4;max-width:1240px;margin:0 auto;padding:120px 40px 0}
 .section-eyebrow{font-family:var(--font-mono);font-weight:600;font-size:14px;letter-spacing:.22em;color:var(--accent);margin-bottom:18px}
-.section-h2{font-family:var(--font-display);font-weight:700;font-size:50px;letter-spacing:-.025em;margin:0;color:var(--tx)}
+.section-h2{font-family:var(--font-display);font-weight:700;font-size:50px;letter-spacing:-.025em;margin:0;color:var(--tx);line-height:1.05}
 .hiw-rail{max-width:980px;margin:0 auto}
 .step-rail{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:26px}
 .step-rail-bg{position:absolute;left:0;right:0;top:19px;height:2px;background:var(--bd);border-radius:2px}
@@ -164,11 +207,7 @@ section[id]{scroll-margin-top:90px}
 /* ── WHAT IT CATCHES — PAIN CARDS ── */
 .catches{position:relative;z-index:4;max-width:1240px;margin:0 auto;padding:120px 40px 0}
 .pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:60px}
-.pain-card{border:1px solid var(--bd);border-radius:13px;padding:26px 24px 24px;background:var(--card);transition:border-color .18s,transform .18s;cursor:default;position:relative;overflow:hidden}
-.pain-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
-.pain-card.sev-red::before{background:var(--critical)}
-.pain-card.sev-amber::before{background:var(--warning)}
-.pain-card.sev-orange::before{background:#fb923c}
+.pain-card{border:1px solid var(--bd);border-radius:13px;padding:26px 24px 24px;background:var(--card);transition:border-color .18s,transform .18s;cursor:default}
 .pain-card:hover{border-color:color-mix(in srgb,var(--accent) 35%,transparent);transform:translateY(-3px)}
 .pain-icon{font-size:22px;margin-bottom:14px;display:block}
 .pain-card h3{font-family:var(--font-display);font-weight:600;font-size:16px;margin:0 0 9px;color:var(--tx);line-height:1.25}
@@ -316,6 +355,10 @@ footer{position:relative;z-index:4;border-top:1px solid var(--bd)}
       <a href="#privacy">Privacy</a>
     </div>
     <div class="nav-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
       <a href="/app" class="btn-accent" target="_blank" rel="noopener">Launch Analyzer →</a>
     </div>
   </div>
@@ -818,11 +861,17 @@ footer{position:relative;z-index:4;border-top:1px solid var(--bd)}
   document.querySelectorAll('[data-reveal]').forEach(el => obs.observe(el));
 })();
 
-// Hover states (CSS :hover not available on inline style-hover attrs from design)
-document.querySelectorAll('.feat-card,.db-pill').forEach(el => {
-  el.addEventListener('mouseenter', () => el.style.borderColor = 'color-mix(in srgb,#4ade80 45%,transparent)');
-  el.addEventListener('mouseleave', () => el.style.borderColor = '');
-});
+// Theme toggle
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') !== 'light';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('dbpulse-theme', isDark ? 'light' : 'dark');
+}
+(function(){
+  const saved = localStorage.getItem('dbpulse-theme');
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+})();
 </script>
 </body>
 </html>
