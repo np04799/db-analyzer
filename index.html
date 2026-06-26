@@ -16,6 +16,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DB Schema Analyzer — v1.0</title>
@@ -23,25 +24,29 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0D1117;--s1:#161B22;--s2:#1C2333;--s3:#21262D;
-  --b:#30363D;--b2:#3D444D;
-  --ac:#2D8CFF;--ac2:#1A6FCC;--acbg:rgba(45,140,255,.08);
-  --tx:#E6EDF3;--t2:#8B949E;--t3:#6E7681;
-  --cr:#F85149;--crbg:rgba(248,81,73,.1);
-  --hi:#F0883E;--hibg:rgba(240,136,62,.1);
-  --me:#D29922;--mebg:rgba(210,153,34,.1);
-  --lo:#3FB950;--lobg:rgba(63,185,80,.1);
-  --ok:#3FB950;--pv:#A371F7;
-  --r:8px;--rl:12px;--tr:.18s ease
+  /* dbpulse brand tokens */
+  --bg:#080b0f;--s1:#0c1217;--s2:#0f1820;--s3:#131e28;
+  --b:#1b2530;--b2:#243040;
+  --ac:#4ade80;--ac2:#22c55e;--acbg:rgba(74,222,128,.08);
+  --acdark:#06210f;
+  --tx:#f4f8fb;--t2:#c7d2db;--t3:#9aa7b2;--t4:#7c8893;
+  --cr:#f87171;--crbg:rgba(248,113,113,.1);
+  --hi:#fbbf24;--hibg:rgba(251,191,36,.1);
+  --me:#a78bfa;--mebg:rgba(167,139,250,.1);
+  --lo:#4ade80;--lobg:rgba(74,222,128,.1);
+  --ok:#4ade80;--pv:#a78bfa;
+  --r:8px;--rl:12px;--tr:.18s ease;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace
 }
 html{font-size:16px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
+body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
 /* OVERVIEW STRIP */
 .ovw{background:linear-gradient(135deg,var(--s2) 0%,var(--s1) 100%);border-bottom:1px solid var(--b);padding:22px 32px}
 .ovw-inner{max-width:900px;margin:0 auto;display:flex;justify-content:center}
-.ovw-icon{width:44px;height:44px;border-radius:12px;background:var(--acbg);border:1px solid rgba(45,140,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ovw-icon{width:44px;height:44px;border-radius:12px;background:var(--acbg);border:1px solid rgba(74,222,128,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ovw-steps{display:flex;flex-direction:column;gap:14px;min-width:260px;flex-shrink:0}
 .ovw-hsteps{display:flex;align-items:flex-start;justify-content:center;gap:0;margin-top:20px;padding-top:18px;border-top:1px solid var(--b);flex-wrap:wrap}
 .ovw-hstep{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:140px;max-width:200px;text-align:center}
@@ -85,17 +90,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .diag-btn.active{border-color:var(--ac);color:var(--ac);background:var(--acbg)}
 .diag-info{font-size:11px;color:var(--t3);margin-left:auto}
 .diag-minimap{position:absolute;bottom:12px;right:12px;background:var(--s1);border:1px solid var(--b);border-radius:var(--r);overflow:hidden;opacity:.85}
-.diag-table-box.dragging{opacity:.9;filter:drop-shadow(0 4px 16px rgba(45,140,255,.5))}
+.diag-table-box.dragging{opacity:.9;filter:drop-shadow(0 4px 16px rgba(74,222,128,.5))}
 .diag-btn.edit-active{border-color:var(--ac)!important;color:var(--ac)!important;background:var(--acbg)!important}
-.diag-name-input{position:absolute;background:var(--s1);border:2px solid var(--ac);border-radius:5px;color:var(--ac);font-size:13px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:3px 8px;outline:none;z-index:100;box-shadow:0 4px 16px rgba(45,140,255,.3);min-width:120px}
+.diag-name-input{position:absolute;background:var(--s1);border:2px solid var(--ac);border-radius:5px;color:var(--ac);font-size:13px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:3px 8px;outline:none;z-index:100;box-shadow:0 4px 16px rgba(74,222,128,.3);min-width:120px}
 .diag-cluster-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-bottom:6px}
 
 /* HEADER */
 .hd{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--b);height:50px;display:flex;align-items:center;padding:0 20px;gap:10px}
-.hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--tx);text-decoration:none}
+.hd-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;font-family:var(--font-display);color:var(--tx);text-decoration:none}
 .hd-logo svg{color:var(--ac)}
 .tag{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
-.tag-v{background:var(--acbg);color:var(--ac);border:1px solid rgba(45,140,255,.2)}
+.tag-v{background:var(--acbg);color:var(--ac);border:1px solid rgba(74,222,128,.2)}
 .tag-e{background:rgba(63,185,80,.1);color:var(--ok);border:1px solid rgba(63,185,80,.2)}
 .tag-s{background:var(--s3);color:var(--t2);border:1px solid var(--b)}
 .hd-r{margin-left:auto}
@@ -109,9 +114,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .nl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:6px 8px 3px}
 .ni{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;color:var(--t2);font-size:12px;transition:all var(--tr);user-select:none}
 .ni:hover{background:var(--s2);color:var(--tx);border-color:var(--b)}
-.ni.act{background:var(--acbg);color:var(--ac);border-color:rgba(45,140,255,.2)}
+.ni.act{background:var(--acbg);color:var(--ac);border-color:rgba(74,222,128,.2)}
 .nsn{width:20px;height:20px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:all var(--tr)}
-.ni.act .nsn{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ni.act .nsn{background:var(--ac);color:var(--acdark);border-color:var(--ac)}
 .ndv{height:1px;background:var(--b);margin:8px 5px}
 .ntip{margin-top:auto;padding:9px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);font-size:11px;color:var(--t3);line-height:1.5}
 .ntip strong{color:var(--t2)}
@@ -136,7 +141,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 /* INPUTS */
 textarea,input[type=text]{width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:border-color var(--tr);resize:vertical}
 textarea{font-family:'Cascadia Code','Fira Code',monospace;font-size:11.5px;line-height:1.6}
-textarea:focus,input[type=text]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,140,255,.1)}
+textarea:focus,input[type=text]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(74,222,128,.1)}
 textarea::placeholder,input::placeholder{color:var(--t3)}
 .ilbl{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .ilbl .op{color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0}
@@ -146,11 +151,11 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .sc{background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;transition:border-color var(--tr)}
 .sc:focus-within{border-color:var(--b2)}
 .sch{display:flex;align-items:center;gap:9px;padding:11px 13px;background:var(--s3);border-bottom:1px solid var(--b)}
-.scix{width:22px;height:22px;border-radius:6px;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.scix{width:22px;height:22px;border-radius:6px;background:var(--ac);color:var(--acdark);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
 .scn{flex:1;padding:5px 9px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:12px;font-weight:500;outline:none;transition:border-color var(--tr)}
 .scn:focus{border-color:var(--ac)}
 .scp{padding:5px 7px;background:var(--s2);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;transition:border-color var(--tr)}
-.scp:focus{border-color:var(--ac)} #globalPlatform:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,140,255,.1)}
+.scp:focus{border-color:var(--ac)} #globalPlatform:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(74,222,128,.1)}
 #globalPlatform:disabled{opacity:.6;cursor:not-allowed;border-color:var(--b);background:var(--s3)}
 .plat-lock{display:none;align-items:center;gap:6px;margin-top:6px;padding:6px 10px;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);border-radius:var(--r);font-size:10px;color:var(--me)}
 .plat-lock.on{display:flex}
@@ -189,8 +194,8 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 .v2b{padding:1px 5px;border-radius:4px;background:rgba(210,153,34,.15);color:var(--me);border:1px solid rgba(210,153,34,.3);font-size:9px;font-weight:700}
 
 /* ANALYZE */
-.baz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:var(--rl);background:var(--ac);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all var(--tr);letter-spacing:.2px}
-.baz:hover{background:var(--ac2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,140,255,.3)}
+.baz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:var(--rl);background:var(--ac);border:none;color:var(--acdark);font-size:13px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all var(--tr);letter-spacing:.2px}
+.baz:hover{background:var(--ac2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(74,222,128,.28)}
 .baz:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 .baz .sp{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
 .baz.ld .sp{display:block}
@@ -391,7 +396,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
       <h2>What is DB Schema Analyzer?</h2>
       <p>A free, privacy-first tool that reviews your database schema design instantly — right in the browser. Paste your <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--ac)">CREATE TABLE</code> statements and get a scored report covering integrity, security, normalization, naming, relationships, and query patterns — with specific SQL fixes for every issue found.</p>
       <div class="ovw-badges">
-        <span class="ovw-badge" style="background:rgba(45,140,255,.08);color:var(--ac);border-color:rgba(45,140,255,.2)">
+        <span class="ovw-badge" style="background:rgba(74,222,128,.08);color:var(--ac);border-color:rgba(74,222,128,.2)">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           No data leaves your browser
         </span>
@@ -415,7 +420,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
       <!-- Horizontal steps below the description -->
       <div class="ovw-hsteps">
         <div class="ovw-hstep">
-          <div class="ovw-step-num" style="background:rgba(45,140,255,.15);color:var(--ac);border-color:rgba(45,140,255,.25)">1</div>
+          <div class="ovw-step-num" style="background:rgba(74,222,128,.15);color:var(--ac);border-color:rgba(74,222,128,.25)">1</div>
           <div class="ovw-step-txt"><strong>Business Overview</strong><span>Describe system &amp; pick platform</span></div>
         </div>
         <div class="ovw-harr">→</div>
@@ -443,7 +448,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
     <!-- STEP 1 -->
     <div class="fs" id="s1">
       <div class="fsh">
-        <div class="fsi" style="background:rgba(45,140,255,.1)">📋</div>
+        <div class="fsi" style="background:rgba(74,222,128,.1)">📋</div>
         <div><h2>Step 1 — Business Overview</h2><p>Describe your system so the report can validate schema-to-business fit</p></div>
         <span class="ot">Optional</span>
       </div>
@@ -562,7 +567,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:14px">🔍</span>
             <strong style="font-size:13px;color:var(--tx)">How this analysis works</strong>
-            <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(45,140,255,.1);color:var(--ac);font-weight:600;border:1px solid rgba(45,140,255,.2)">Rule-based static analysis</span>
+            <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(74,222,128,.1);color:var(--ac);font-weight:600;border:1px solid rgba(74,222,128,.2)">Rule-based static analysis</span>
           </div>
           <span class="ai-arr" style="font-size:11px;color:var(--t3);transition:transform .2s">▶</span>
         </div>
@@ -604,7 +609,7 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
       <div class="tbs">
         <button class="tb ac" data-tp="ti" onclick="swTab('ti',this)">🐛 Issues <span class="tbd" id="iBdg">0</span></button>
         <button class="tb" data-tp="ts" onclick="swTab('ts',this)">📊 Summary</button>
-        <button class="tb" data-tp="tsol" onclick="swTab('tsol',this)">💡 Solutions <span class="tbd" id="solBdg" style="background:rgba(45,140,255,.2);color:var(--ac)">0</span></button>
+        <button class="tb" data-tp="tsol" onclick="swTab('tsol',this)">💡 Solutions <span class="tbd" id="solBdg" style="background:rgba(74,222,128,.2);color:var(--ac)">0</span></button>
         <button class="tb" data-tp="tc" onclick="swTab('tc',this)" id="cmpTab">🔀 Comparison</button>
         <button class="tb" data-tp="tr" onclick="swTab('tr',this)">📅 Roadmap</button>
         <button class="tb" data-tp="tdiag" onclick="swTab('tdiag',this)" id="diagTab">📊 ER Diagram</button>
@@ -649,7 +654,7 @@ const a0_0x2c9dd3=a0_0xf191;(function(_0x354810,_0x1c2fda){const _0x2d4e39=a0_0x
   <div class="hiw-heading"><a href="https://raw.githubusercontent.com/np04799/db-analyzer/main/assets/DB_Schema_Analyzer_Presentations.zip" download title="Download both PPT presentations (full deck + one-pager)">How It Works <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>
   <div class="hiw-inner">
     <div class="hiw-step">
-      <div class="hiw-num" style="background:rgba(45,140,255,.15);color:var(--ac)">①</div>
+      <div class="hiw-num" style="background:rgba(74,222,128,.15);color:var(--ac)">①</div>
       <span class="hiw-txt">Describe your system &amp; pick platform</span>
     </div>
     <span class="hiw-arr">→</span>
