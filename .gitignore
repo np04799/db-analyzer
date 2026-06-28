@@ -4,3 +4,9 @@ Thumbs.db
 node_modules/
 .vercel/
 *.env
+
+# Un-obfuscated source — NEVER commit to public repo
+# This is the readable master that gets obfuscated into index.html
+index.src.html
+index_master_source.html
+*.src.html
