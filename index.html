@@ -602,9 +602,9 @@ textarea::placeholder,input::placeholder{color:var(--t3)}
 // isPro controls all premium gates. Default false (FREE tier).
 // Launch: hardcoded false. Pro launch: replace with Edge Function token check.
 let isPro = false;
-// TEST UNLOCK: append ?pro=1 to the URL to preview the paid experience.
-// Remove this block (or the URL) before production hardening.
-try { if (new URLSearchParams(location.search).get('pro') === '1') isPro = true; } catch (e) {}
+// TEST UNLOCK: append ?pro=dbpulse_unlock_7k29x to the URL to preview the paid experience.
+// Client-side only — not real protection. Real gating arrives with Edge Functions (V2).
+try { if (new URLSearchParams(location.search).get('pro') === 'dbpulse_unlock_7k29x') isPro = true; } catch (e) {}
 const FREE_FINDINGS_PER_CATEGORY = 2;
 
 // Build the per-category upgrade wall shown after the free findings
